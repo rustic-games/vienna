@@ -14,9 +14,9 @@ During early development, you can run the test setup as follows:
 on macOS, this will get you started:
 
 ```shell
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-git clone https://github.com/rustic-games/vienna
-cargo build --target wasm32-wasi --manifest-path plugins/test/Cargo.toml
+curl --proto "=https" --tlsv1.2 -sSf "https://sh.rustup.rs" | sh
+git clone "https://github.com/rustic-games/vienna"
+cargo build --target "wasm32-wasi" --manifest-path "plugins/test/Cargo.toml"
 cargo run
 ```
 
