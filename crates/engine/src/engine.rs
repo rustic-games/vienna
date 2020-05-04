@@ -9,11 +9,15 @@ pub struct Engine {
 }
 
 impl Engine {
+    pub fn register_plugin(&mut self, path: &str) -> Result<()> {
+        self.plugin_manager.register_plugin(path)?;
+
+        Ok(())
+    }
+
     pub fn run(&mut self) -> Result<()> {
         println!("Hello, from engine!");
 
-        let test = "tests/fixtures/test.wat";
-        self.plugin_manager.register_plugin(test)?;
         self.plugin_manager.run_plugins()?;
 
         Ok(())

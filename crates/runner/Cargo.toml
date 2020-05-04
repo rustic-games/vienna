@@ -6,5 +6,6 @@ edition = "2018"
 publish = false
 
 [dependencies]
-engine = { package = "vienna-engine", path = "../engine" }
 anyhow = "1.0"
+engine = { package = "vienna-engine", path = "../engine" }
+walkdir = "2"
