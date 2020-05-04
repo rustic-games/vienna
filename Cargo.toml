@@ -4,3 +4,7 @@ members = [
     "crates/engine",
     "crates/runner",
 ]
+
+exclude = [
+    "plugins/test",
+]

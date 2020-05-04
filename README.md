@@ -34,7 +34,7 @@ on macOS, this will get you started:
 ```shell
 curl --proto "=https" --tlsv1.2 -sSf "https://sh.rustup.rs" | sh
 git clone "https://github.com/rustic-games/vienna"
-cargo build --target "wasm32-wasi" --manifest-path "plugins/test/Cargo.toml"
+cargo build --target "wasm32-unknown-unknown" --manifest-path "plugins/test/Cargo.toml"
 cargo run
 ```
 
@@ -58,3 +58,13 @@ novel without having to compile the game itself.
 
 Until then, the purpose of this crate is to allow running `cargo run` from the
 project root to test the engine.
+
+## Plugins
+
+A set of default engine plugins live in the [`plugins` directory](./plugins).
+
+The engine embeds these plugins by default to provide the core functionality for
+any game. Custom plugins can further extend the capability of a game.
+
+Currently, a single `test` plugin exists to validate the functionality of the
+engine.
