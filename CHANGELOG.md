@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog], and this project adheres to
 ## _[Unreleased]_
 
 - feat: initial scaffolding
+- feat: initial scaffolding
 - docs: track project changes in CHANGELOG.md
 - docs: improve macOS installation instructions
 - docs: add README.md
