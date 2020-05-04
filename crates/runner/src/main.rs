@@ -3,11 +3,10 @@
 
 use engine::Engine;
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     println!("Hello, from runner!");
 
-    match Engine.run() {
-        Err(err) => eprintln!("{}", err),
-        Ok(()) => println!("success"),
-    };
+    Engine::default().run()?;
+
+    Ok(println!("success"))
 }

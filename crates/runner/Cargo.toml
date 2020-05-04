@@ -7,3 +7,4 @@ publish = false
 
 [dependencies]
 engine = { package = "vienna-engine", path = "../engine" }
+anyhow = "1.0"

@@ -3,8 +3,8 @@
 
 mod engine;
 mod error;
+mod plugin;
+mod plugin_manager;
 
 pub use engine::Engine;
-pub use error::EngineError;
-
-type Result<T> = std::result::Result<T, EngineError>;
+pub use error::Error;

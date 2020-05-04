@@ -6,5 +6,18 @@ edition = "2018"
 publish = false
 
 [dependencies]
-thiserror = "1.0"
+anyhow = "1.0"
 displaydoc = "0.1"
+thiserror = "1.0"
+wasmtime = { version = "0.16", default-features = false }
+
+[dev-dependencies]
+tempfile = "3.1"
+
+# The "wat" feature is enabled during development to allow using text-based wasm
+# fixtures.
+#
+# The feature is disabled in production to reduce compile times. Providing a
+# text-based wasm plugin is uncommon, as plugins will be rather large, and most
+# likely compiled from other languages.
+wasmtime = { version = "0.16", features = ["wat"], default-features = false }

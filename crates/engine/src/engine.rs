@@ -1,12 +1,21 @@
-use crate::{EngineError, Result};
+use crate::error::Error;
+use crate::plugin_manager::PluginManager;
+
+type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Default)]
-pub struct Engine;
+pub struct Engine {
+    plugin_manager: PluginManager,
+}
 
 impl Engine {
-    pub fn run(self) -> Result<()> {
+    pub fn run(&mut self) -> Result<()> {
         println!("Hello, from engine!");
 
-        Err(EngineError::Unknown)
+        let test = "tests/fixtures/test.wat";
+        self.plugin_manager.register_plugin(test)?;
+        self.plugin_manager.run_plugins()?;
+
+        Ok(())
     }
 }

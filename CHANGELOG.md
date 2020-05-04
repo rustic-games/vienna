@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog], and this project adheres to
 
 ## _[Unreleased]_
 
+- feat: support running wasm-based plugins
 - style: enable rustfmt and clippy
 - feat: initial scaffolding
 - feat: initial scaffolding
