@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog], and this project adheres to
 
 ## _[Unreleased]_
 
+- style: enable rustfmt and clippy
 - feat: initial scaffolding
 - feat: initial scaffolding
 - docs: track project changes in CHANGELOG.md
