@@ -2,26 +2,6 @@
 
 Experimental game engine for visual novels.
 
-## Running locally
-
-During early development, you can run the test setup as follows:
-
-1. Install [Rust][install-rust].
-2. Clone project.
-3. Build test plugin.
-4. Run test game.
-
-on macOS, this will get you started:
-
-```shell
-curl --proto "=https" --tlsv1.2 -sSf "https://sh.rustup.rs" | sh
-git clone "https://github.com/rustic-games/vienna"
-cargo build --target "wasm32-wasi" --manifest-path "plugins/test/Cargo.toml"
-cargo run
-```
-
-[install-rust]: https://rustup.rs/
-
 ## Goal
 
 This is a _work in progress_ game engine that focuses on making it simple but
@@ -39,3 +19,33 @@ your programming language of choice.
 
 [rust]: https://www.rust-lang.org/
 [wasm]: https://webassembly.org/
+
+## Development
+
+During development, you can run the test setup as follows:
+
+1. Install [Rust][install-rust].
+2. Clone project.
+3. Build test plugin.
+4. Run test game.
+
+on macOS, this will get you started:
+
+```shell
+curl --proto "=https" --tlsv1.2 -sSf "https://sh.rustup.rs" | sh
+git clone "https://github.com/rustic-games/vienna"
+cargo build --target "wasm32-wasi" --manifest-path "plugins/test/Cargo.toml"
+cargo run
+```
+
+[install-rust]: https://rustup.rs/
+
+## Crates
+
+The project consists of separate crates, each with their own set of
+responsibilities.
+
+### Engine
+
+The responsibility of the `vienna-engine` crate is to advance the game state
+based on (player) input and render the results to the screen.
