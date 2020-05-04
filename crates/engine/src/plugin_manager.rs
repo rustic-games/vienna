@@ -1,7 +1,16 @@
 use crate::error::PluginManagerError as Error;
 use crate::plugin::Plugin;
 
-type Result<T> = std::result::Result<T, Error>;
+pub(crate) type Result<T> = std::result::Result<T, Error>;
+
+/// The `PluginManager` trait allows an object to manage a set of plugins.
+pub trait PluginHandler {
+    /// Run all registered plugins.
+    fn run_plugins(&mut self) -> Result<()>;
+
+    /// Register a new plugin for this manager to manage.
+    fn register_plugin(&mut self, path: &str) -> Result<()>;
+}
 
 /// The object responsible for "managing" engine plugins.
 ///
@@ -10,7 +19,7 @@ type Result<T> = std::result::Result<T, Error>;
 /// - Loading new Wasm-based plugins.
 /// - Running plugins when requested.
 #[derive(Default)]
-pub(crate) struct PluginManager {
+pub struct PluginManager {
     /// The list of plugins this plugin manager is responsible for.
     plugins: Vec<Plugin>,
 
@@ -18,12 +27,8 @@ pub(crate) struct PluginManager {
     plugin_store: wasmtime::Store,
 }
 
-impl PluginManager {
-    /// Run all registered plugins.
-    ///
-    /// If a plugin fails, the manager stops running any pending plugins and
-    /// returns an error.
-    pub(crate) fn run_plugins(&self) -> Result<()> {
+impl PluginHandler for PluginManager {
+    fn run_plugins(&mut self) -> Result<()> {
         for plugin in &self.plugins {
             plugin.run()?
         }
@@ -31,11 +36,7 @@ impl PluginManager {
         Ok(())
     }
 
-    /// Register a new plugin for this manager to manage.
-    ///
-    /// The provided path has to point to a valid Wasm file for this method to
-    /// succeed.
-    pub(crate) fn register_plugin(&mut self, path: &str) -> Result<()> {
+    fn register_plugin(&mut self, path: &str) -> Result<()> {
         use wasmtime::{Instance, Module};
 
         let module = Module::from_file(&self.plugin_store, path).map_err(|err| (path, err))?;
@@ -58,7 +59,7 @@ mod tests {
 
         #[test]
         fn empty() {
-            let manager = PluginManager::default();
+            let mut manager = PluginManager::default();
 
             assert!(manager.run_plugins().is_ok())
         }
