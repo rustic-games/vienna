@@ -1,5 +1,6 @@
 use crate::error::PluginManagerError as Error;
 use crate::plugin::{Plugin, WasmPlugin};
+use std::fmt;
 
 pub(crate) type Result<T> = std::result::Result<T, Error>;
 
@@ -29,6 +30,15 @@ pub struct PluginManager<T: Plugin> {
 
     // The wasm cache used by the `wasmtime` Wasm runtime.
     plugin_store: wasmtime::Store,
+}
+
+impl<T: Plugin + fmt::Debug> fmt::Debug for PluginManager<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PluginManager")
+            .field("plugins", &self.plugins)
+            .field("plugin_store", &format!("wasmtime::Store"))
+            .finish()
+    }
 }
 
 impl<T: Plugin> PluginHandler for PluginManager<T> {

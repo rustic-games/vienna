@@ -1,3 +1,4 @@
+use crate::builder::EngineBuilder;
 use crate::error::Error;
 use crate::plugin_manager::{DefaultPluginManager, PluginHandler};
 
@@ -7,16 +8,14 @@ type Result<T> = std::result::Result<T, Error>;
 /// defaults.
 pub type DefaultEngine = Engine<DefaultPluginManager>;
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Engine<T: PluginHandler> {
-    plugin_manager: T,
+    pub(crate) plugin_manager: T,
 }
 
 impl<T: PluginHandler> Engine<T> {
-    pub fn new() -> Self {
-        let plugin_manager = T::new();
-
-        Engine { plugin_manager }
+    pub fn builder<'a>() -> EngineBuilder<'a> {
+        EngineBuilder::default()
     }
 }
 

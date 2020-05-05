@@ -1002,6 +1002,7 @@ dependencies = [
  "displaydoc",
  "tempfile",
  "thiserror",
+ "walkdir",
  "wasmtime",
 ]
 
@@ -1011,7 +1012,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "vienna-engine",
- "walkdir",
 ]
 
 [[package]]

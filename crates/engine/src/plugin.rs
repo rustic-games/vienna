@@ -1,5 +1,6 @@
 use crate::error::PluginError as Error;
 use displaydoc::Display;
+use std::fmt;
 use wasmtime::Instance;
 
 type Result<T> = std::result::Result<T, Error>;
@@ -24,6 +25,14 @@ pub enum Func {
 pub struct WasmPlugin {
     /// The Wasm instance used to run the plugin logic.
     instance: Instance,
+}
+
+impl fmt::Debug for WasmPlugin {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("WasmPlugin")
+            .field("instance", &format!("wasmtime::Instance"))
+            .finish()
+    }
 }
 
 impl Plugin for WasmPlugin {

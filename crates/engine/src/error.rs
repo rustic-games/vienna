@@ -7,6 +7,9 @@ use thiserror::Error;
 /// produce.
 #[derive(Debug, Display, Error)]
 pub enum Error {
+    /// EngineBuilder error
+    EngineBuilder(#[from] EngineBuilderError),
+
     /// plugin manager error
     PluginManager(#[from] PluginManagerError),
 
@@ -15,6 +18,39 @@ pub enum Error {
 
     /// unknown engine error
     Unknown,
+}
+
+/// EngineBuilder related errors.
+#[derive(Debug, Display, Error)]
+pub enum EngineBuilderError {
+    /// inaccessible wasm module `{path}` ({kind:?})
+    Io { path: String, kind: io::ErrorKind },
+
+    /// plugin manager error
+    PluginManager(#[from] PluginManagerError),
+
+    /// unknown builder error
+    Unknown,
+}
+
+impl From<walkdir::Error> for EngineBuilderError {
+    fn from(err: walkdir::Error) -> Self {
+        use std::borrow::Cow;
+        use std::path::Path;
+
+        let path = err
+            .path()
+            .map(Path::to_string_lossy)
+            .map(Cow::into_owned)
+            .unwrap_or_default();
+
+        if let Some(err) = err.io_error() {
+            let kind = err.kind();
+            return Self::Io { path, kind };
+        };
+
+        Self::Unknown
+    }
 }
 
 /// Plugin related errors.

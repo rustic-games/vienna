@@ -9,6 +9,7 @@ publish = false
 anyhow = "1.0"
 displaydoc = "0.1"
 thiserror = "1.0"
+walkdir = "2.3"
 wasmtime = { version = "0.16", default-features = false }
 
 [dev-dependencies]

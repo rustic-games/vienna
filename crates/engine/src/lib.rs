@@ -1,6 +1,7 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
 
+mod builder;
 mod engine;
 mod error;
 mod plugin;
