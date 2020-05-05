@@ -1,15 +1,23 @@
 use crate::error::Error;
-use crate::plugin_manager::{PluginHandler, PluginManager};
+use crate::plugin_manager::{DefaultPluginManager, PluginHandler};
 
 type Result<T> = std::result::Result<T, Error>;
 
 /// A convenient top-level engine type exposed to start an engine with sensible
 /// defaults.
-pub type DefaultEngine = Engine<PluginManager>;
+pub type DefaultEngine = Engine<DefaultPluginManager>;
 
 #[derive(Default)]
 pub struct Engine<T: PluginHandler> {
     plugin_manager: T,
+}
+
+impl<T: PluginHandler> Engine<T> {
+    pub fn new() -> Self {
+        let plugin_manager = T::new();
+
+        Engine { plugin_manager }
+    }
 }
 
 impl<T: PluginHandler> Engine<T> {
@@ -74,6 +82,12 @@ mod tests {
     }
 
     impl PluginHandler for MockPluginManager {
+        fn new() -> Self {
+            MockPluginManager {
+                plugins: HashMap::new(),
+            }
+        }
+
         fn register_plugin(&mut self, path: &str) -> Result<()> {
             self.plugins.insert(path.to_owned(), 0);
             Ok(())

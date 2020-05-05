@@ -6,7 +6,7 @@ use engine::Engine;
 fn main() -> anyhow::Result<()> {
     println!("Hello, from runner!");
 
-    let mut engine = Engine::default();
+    let mut engine = Engine::new();
 
     for plugin in find_plugins_in_path("plugins")? {
         engine.register_plugin(&plugin)?;

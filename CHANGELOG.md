@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog], and this project adheres to
 
 ## _[Unreleased]_
 
+- refactor: convert `Plugin` to a trait
 - test: make it easier to test engine in isolation
 - feat: run all rust-based wasm plugins
 - feat: add Rust-based Wasm plugin

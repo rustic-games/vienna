@@ -4,6 +4,15 @@ use wasmtime::Instance;
 
 type Result<T> = std::result::Result<T, Error>;
 
+/// This trait makes it possible for a plugin to run to completion.
+pub trait Plugin {
+    type Instance;
+    type Error: std::error::Error;
+
+    fn new(instance: Instance) -> Self;
+    fn run(&self) -> Result<()>;
+}
+
 /// A list of exported functions the engine expects a plugin to have.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Display)]
 pub enum Func {
@@ -12,22 +21,25 @@ pub enum Func {
 }
 
 /// A container type to wrap a Wasm module.
-pub(crate) struct Plugin {
+pub struct WasmPlugin {
     /// The Wasm instance used to run the plugin logic.
     instance: Instance,
 }
 
-impl Plugin {
+impl Plugin for WasmPlugin {
+    type Instance = Instance;
+    type Error = Error;
+
     /// Create a new plugin based on an existing Wasm instance.
-    pub(crate) fn new(instance: Instance) -> Self {
-        Plugin { instance }
+    fn new(instance: Self::Instance) -> Self {
+        WasmPlugin { instance }
     }
 
     /// Run the plugin.
     ///
     /// This requires the Wasm module to expose a `_run` function that takes
     /// zero arguments and returns no values.
-    pub(crate) fn run(&self) -> Result<()> {
+    fn run(&self) -> Result<()> {
         let func = Func::Run;
 
         let run = self
@@ -76,13 +88,13 @@ mod tests {
         }
     }
 
-    fn plugin(wasm: &str) -> Plugin {
+    fn plugin(wasm: &str) -> WasmPlugin {
         use wasmtime::Module;
 
         let store = wasmtime::Store::default();
         let module = Module::new(&store, wasm).unwrap();
         let instance = Instance::new(&module, &[]).unwrap();
 
-        Plugin::new(instance)
+        WasmPlugin::new(instance)
     }
 }
