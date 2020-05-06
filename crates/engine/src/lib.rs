@@ -7,9 +7,10 @@ mod error;
 mod plugin;
 mod plugin_manager;
 
-use crate::builder::Builder;
-use error::Error;
+use builder::Builder;
 use plugin_manager::PluginManager;
+
+pub use error::Error;
 
 /// A convenient top-level engine type exposed to start an engine with sensible
 /// defaults.

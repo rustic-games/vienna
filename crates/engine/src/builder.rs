@@ -1,7 +1,6 @@
-use crate::engine::Engine;
 use crate::error::EngineBuilderError as Error;
-use crate::plugin::Wasm;
 use crate::plugin_manager::{PluginHandler, PluginManager};
+use crate::Engine;
 
 type Result<T> = std::result::Result<T, Error>;
 
@@ -18,7 +17,7 @@ impl<'a> Builder<'a> {
 }
 
 impl<'a> Builder<'a> {
-    pub fn build(self) -> Result<Engine<PluginManager<Wasm>>> {
+    pub fn build(self) -> Result<Engine> {
         let mut plugin_manager = PluginManager::new();
 
         for path in &self.plugin_paths {

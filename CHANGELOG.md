@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog], and this project adheres to
 
 ## _[Unreleased]_
 
+- refactor: module reshuffling
 - chore: update dependencies
 - style: resolve clippy warnings
 - refactor: improved type and module naming conventions
