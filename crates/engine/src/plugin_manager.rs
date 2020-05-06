@@ -1,10 +1,8 @@
 use crate::error::PluginManagerError as Error;
-use crate::plugin::{Plugin, WasmPlugin};
+use crate::plugin::Plugin;
 use std::fmt;
 
 pub(crate) type Result<T> = std::result::Result<T, Error>;
-
-pub type DefaultPluginManager = PluginManager<WasmPlugin>;
 
 /// The `PluginHandler` trait allows an object to manage a set of plugins.
 pub trait PluginHandler {
@@ -73,7 +71,7 @@ impl<T: Plugin> PluginHandler for PluginManager<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::plugin::WasmPlugin;
+    use crate::plugin::Wasm;
     use tempfile::NamedTempFile;
 
     mod run_plugins {
@@ -147,7 +145,7 @@ mod tests {
         }
     }
 
-    fn manager() -> PluginManager<WasmPlugin> {
+    fn manager() -> PluginManager<Wasm> {
         PluginManager::new()
     }
 
@@ -164,13 +162,13 @@ mod tests {
         (file, path)
     }
 
-    fn plugin(wasm: &str) -> WasmPlugin {
+    fn plugin(wasm: &str) -> Wasm {
         use wasmtime::{Instance, Module};
 
         let store = wasmtime::Store::default();
         let module = Module::new(&store, wasm).unwrap();
         let instance = Instance::new(&module, &[]).unwrap();
 
-        WasmPlugin::new(instance)
+        Wasm::new(instance)
     }
 }

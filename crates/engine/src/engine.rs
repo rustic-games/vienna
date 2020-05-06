@@ -1,12 +1,7 @@
-use crate::builder::EngineBuilder;
-use crate::error::Error;
-use crate::plugin_manager::{DefaultPluginManager, PluginHandler};
+use crate::plugin_manager::PluginHandler;
+use crate::{Builder, Error};
 
 type Result<T> = std::result::Result<T, Error>;
-
-/// A convenient top-level engine type exposed to start an engine with sensible
-/// defaults.
-pub type DefaultEngine = Engine<DefaultPluginManager>;
 
 #[derive(Debug, Default)]
 pub struct Engine<T: PluginHandler> {
@@ -14,8 +9,8 @@ pub struct Engine<T: PluginHandler> {
 }
 
 impl<T: PluginHandler> Engine<T> {
-    pub fn builder<'a>() -> EngineBuilder<'a> {
-        EngineBuilder::default()
+    pub fn builder<'a>() -> Builder<'a> {
+        Builder::default()
     }
 }
 

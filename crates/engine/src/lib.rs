@@ -7,5 +7,10 @@ mod error;
 mod plugin;
 mod plugin_manager;
 
-pub use engine::DefaultEngine as Engine;
-pub use error::Error;
+use crate::builder::Builder;
+use error::Error;
+use plugin_manager::PluginManager;
+
+/// A convenient top-level engine type exposed to start an engine with sensible
+/// defaults.
+pub type Engine = engine::Engine<PluginManager<plugin::Wasm>>;
