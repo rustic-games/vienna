@@ -1,5 +1,5 @@
-// use super::{Error, Func, Plugin};
 use super::RuntimeError;
+use crate::error;
 use crate::plugin::{Func, Runtime};
 use std::fmt;
 use wasmtime::Instance;
@@ -8,6 +8,12 @@ use wasmtime::Instance;
 pub struct Plugin {
     /// The Wasm instance used to run the plugin logic.
     instance: Instance,
+}
+
+impl Plugin {
+    pub(crate) const fn new(instance: Instance) -> Self {
+        Self { instance }
+    }
 }
 
 impl fmt::Debug for Plugin {
@@ -19,29 +25,27 @@ impl fmt::Debug for Plugin {
 }
 
 impl Runtime for Plugin {
-    type Data = Instance;
-    type Error = RuntimeError;
-
-    /// Create a new plugin based on an existing Wasm instance.
-    fn new(instance: Self::Data) -> Self {
-        Self { instance }
-    }
-
     /// Run the plugin.
     ///
     /// This requires the Wasm module to expose a `_run` function that takes
     /// zero arguments and returns no values.
-    fn run(&self) -> Result<(), Self::Error> {
+    fn run(&mut self) -> Result<(), error::Runtime> {
         let func = Func::Run;
 
         let run = self
             .instance
             .get_func(&func.to_string())
-            .ok_or(Self::Error::MissingExportedFunction(func))?
+            .ok_or(RuntimeError::MissingExportedFunction(func))?
             .get0::<()>()
-            .map_err(|source| Self::Error::InvalidExportedFunction { func, source })?;
+            .map_err(|source| RuntimeError::InvalidExportedFunction { func, source })?;
 
-        run().map_err(|source| Self::Error::Failed { func, source })
+        run().map_err(|source| RuntimeError::Failed { func, source })?;
+
+        Ok(())
+    }
+
+    fn as_wasm(&mut self) -> Option<&mut Self> {
+        Some(self)
     }
 }
 
@@ -63,9 +67,15 @@ mod tests {
         fn missing_function() {
             let wasm = r#"(module (func (export "_invalid")))"#;
 
+            let result = plugin(wasm).run();
+            let err = anyhow::Error::new(result.unwrap_err());
+
             assert_eq!(
-                plugin(wasm).run().unwrap_err().to_string(),
-                format!("missing exported `{}` function", Func::Run)
+                format!("{:?}", err),
+                "wasm runtime error\n\n\
+
+                 Caused by:\n    \
+                     missing exported `_run` function"
             )
         }
 
@@ -73,9 +83,16 @@ mod tests {
         fn invalid_function_signature() {
             let wasm = r#"(module (func (export "_run") (result i32) i32.const 42))"#;
 
+            let result = plugin(wasm).run();
+            let err = anyhow::Error::new(result.unwrap_err());
+
             assert_eq!(
-                plugin(wasm).run().unwrap_err().to_string(),
-                format!("invalid exported `{}` function", Func::Run)
+                format!("{:?}", err),
+                "wasm runtime error\n\n\
+
+                 Caused by:\n    \
+                     0: invalid exported `_run` function\n    \
+                     1: Type mismatch: too many return values (expected 1)"
             )
         }
     }

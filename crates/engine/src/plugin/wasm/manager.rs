@@ -1,5 +1,6 @@
 use super::plugin::Plugin;
 use super::HandlerError;
+use crate::error;
 use crate::plugin::{Handler, Runtime};
 use std::fmt;
 use wasmtime::{Instance, Module, Store};
@@ -24,31 +25,38 @@ impl fmt::Debug for Manager {
 }
 
 impl Handler for Manager {
-    type Error = HandlerError;
-
-    fn run_plugins(&mut self) -> Result<(), Self::Error> {
-        for plugin in &self.plugins {
-            plugin.run()?
+    fn run_plugins(&mut self) -> Result<(), error::Runtime> {
+        for plugin in &mut self.plugins {
+            plugin.run()?;
         }
 
         Ok(())
     }
 
-    fn register_plugin(&mut self, path: &str) -> Result<(), Self::Error> {
-        let module = Module::from_file(&self.plugin_store, path).map_err(|err| (path, err))?;
-        let instance = Instance::new(&module, &[]).map_err(|err| (path, err))?;
+    fn register_plugin(&mut self, path: &str) -> Result<(), error::Handler> {
+        let module = Module::from_file(&self.plugin_store, path)
+            .map_err(|err| (path, err))
+            .map_err(HandlerError::from)?;
+
+        let instance = Instance::new(&module, &[])
+            .map_err(|err| (path, err))
+            .map_err(HandlerError::from)?;
+
         let plugin = Plugin::new(instance);
 
         self.plugins.push(plugin);
 
         Ok(())
     }
+
+    fn as_wasm(&mut self) -> Option<&mut Self> {
+        Some(self)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::plugin::Wasm;
     use tempfile::NamedTempFile;
 
     mod run_plugins {
@@ -84,9 +92,15 @@ mod tests {
             let p = plugin(r#"(module (func (export "INVALID")))"#);
             manager.plugins.push(p);
 
-            let err = manager.run_plugins().unwrap_err();
+            let err = anyhow::Error::new(manager.run_plugins().unwrap_err());
 
-            assert_eq!(err.to_string(), format!("error running wasm instance"))
+            assert_eq!(
+                format!("{:?}", err),
+                "wasm runtime error\n\n\
+
+                 Caused by:\n    \
+                     missing exported `_run` function"
+            )
         }
     }
 
@@ -104,20 +118,39 @@ mod tests {
         fn invalid_wasm() {
             let (_guard, path) = wasm(r#"INVALID"#);
 
-            let err = Manager::default().register_plugin(&path).unwrap_err();
+            let result = Manager::default().register_plugin(&path);
+            let err = anyhow::Error::new(result.unwrap_err());
 
-            assert_eq!(err.to_string(), format!("invalid wasm module `{}`", path))
+            assert_eq!(
+                format!("{:?}", err),
+                format!(
+                    "wasm handler error\n\n\
+
+                     Caused by:\n    \
+                         0: invalid wasm module `{0}`\n    \
+                         1: expected `(`\n            \
+                                 --> {0}:1:1\n             \
+                                 |\n           \
+                               1 | INVALID\n             \
+                                 | ^",
+                    &path
+                )
+            )
         }
 
         #[test]
         fn missing_file() {
             let path = "/missing/file";
 
-            let err = Manager::default().register_plugin(&path).unwrap_err();
+            let result = Manager::default().register_plugin(&path);
+            let err = anyhow::Error::new(result.unwrap_err());
 
             assert_eq!(
-                err.to_string(),
-                format!("inaccessible wasm module `{}` (NotFound)", path)
+                format!("{:?}", err),
+                "wasm handler error\n\n\
+
+                 Caused by:\n    \
+                     inaccessible wasm module `/missing/file` (NotFound)"
             )
         }
     }
@@ -135,11 +168,11 @@ mod tests {
         (file, path)
     }
 
-    fn plugin(wasm: &str) -> Wasm {
+    fn plugin(wasm: &str) -> Plugin {
         let store = wasmtime::Store::default();
         let module = Module::new(&store, wasm).unwrap();
         let instance = Instance::new(&module, &[]).unwrap();
 
-        Wasm::new(instance)
+        Plugin::new(instance)
     }
 }

@@ -12,4 +12,4 @@ pub use error::Error;
 
 /// A convenient top-level engine type exposed to start an engine with sensible
 /// defaults.
-pub type Engine = engine::Engine<plugin::WasmManager>;
+pub type Engine = engine::Engine;

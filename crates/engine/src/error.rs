@@ -11,7 +11,10 @@ pub enum Error {
     EngineBuilder(#[from] Builder),
 
     /// plugin handler error
-    PluginHandler(#[from] anyhow::Error),
+    PluginHandler(#[from] Handler),
+
+    /// plugin runtime error
+    PluginRuntime(#[from] Runtime),
 
     /// unknown engine error
     Unknown,
@@ -20,14 +23,28 @@ pub enum Error {
 /// `EngineBuilder` related errors.
 #[derive(Debug, Display, Error)]
 pub enum Builder {
-    /// inaccessible wasm module `{path}` ({kind:?})
+    /// inaccessible plugin `{path}` ({kind:?})
     Io { path: String, kind: io::ErrorKind },
 
-    /// plugin manager error
-    WasmHandler(#[from] wasm::HandlerError),
+    /// plugin handler error
+    PluginHandler(#[from] Handler),
 
     /// unknown builder error
     Unknown,
+}
+
+/// `plugin::Runtime` related errors.
+#[derive(Debug, Display, Error)]
+pub enum Runtime {
+    /// wasm runtime error
+    WasmRuntime(#[from] wasm::RuntimeError),
+}
+
+/// `plugin::Handler` related errors.
+#[derive(Debug, Display, Error)]
+pub enum Handler {
+    /// wasm handler error
+    WasmHandler(#[from] wasm::HandlerError),
 }
 
 impl From<walkdir::Error> for Builder {

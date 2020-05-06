@@ -1,5 +1,5 @@
 use crate::error::Builder as Error;
-use crate::plugin::{Handler, WasmManager};
+use crate::plugin::{wasm, Handler};
 use crate::Engine;
 
 type Result<T> = std::result::Result<T, Error>;
@@ -18,7 +18,7 @@ impl<'a> Builder<'a> {
 
 impl<'a> Builder<'a> {
     pub fn build(self) -> Result<Engine> {
-        let mut plugin_handler = WasmManager::default();
+        let mut plugin_handler = Box::new(wasm::Manager::default());
 
         for path in &self.plugin_paths {
             for plugin in find_plugins_in_path(path)? {
@@ -116,7 +116,7 @@ mod tests {
 
             assert_eq!(
                 err.to_string(),
-                format!("inaccessible wasm module `foo` (NotFound)")
+                format!("inaccessible plugin `foo` (NotFound)")
             )
         }
     }
