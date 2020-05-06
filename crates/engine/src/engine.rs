@@ -15,13 +15,6 @@ impl<T: PluginHandler> Engine<T> {
 }
 
 impl<T: PluginHandler> Engine<T> {
-    /// Register a new plugin with the engine.
-    pub fn register_plugin(&mut self, path: &str) -> Result<()> {
-        self.plugin_manager.register_plugin(path)?;
-
-        Ok(())
-    }
-
     /// Run the engine until completion.
     pub fn run(&mut self) -> Result<()> {
         println!("Hello, from engine!");
@@ -37,18 +30,6 @@ mod tests {
     use super::*;
     use crate::plugin_manager::Result;
     use std::collections::HashMap;
-
-    mod register_plugin {
-        use super::*;
-
-        #[test]
-        fn works() {
-            let mut engine = mock_engine();
-            engine.register_plugin("foo").unwrap();
-
-            assert_eq!(engine.plugin_manager.plugins.get("foo"), Some(&0));
-        }
-    }
 
     mod run {
         use super::*;
