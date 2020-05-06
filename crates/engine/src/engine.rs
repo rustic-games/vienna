@@ -1,25 +1,25 @@
-use crate::plugin_manager::PluginHandler;
+use crate::plugin::Handler;
 use crate::{Builder, Error};
 
-type Result<T> = std::result::Result<T, Error>;
-
 #[derive(Debug, Default)]
-pub struct Engine<T: PluginHandler> {
-    pub(crate) plugin_manager: T,
+pub struct Engine<H: Handler> {
+    pub(crate) plugin_handler: H,
 }
 
-impl<T: PluginHandler> Engine<T> {
+impl<H: Handler> Engine<H> {
     pub fn builder<'a>() -> Builder<'a> {
         Builder::default()
     }
 }
 
-impl<T: PluginHandler> Engine<T> {
+impl<H: Handler> Engine<H> {
     /// Run the engine until completion.
-    pub fn run(&mut self) -> Result<()> {
+    pub fn run(&mut self) -> Result<(), Error> {
         println!("Hello, from engine!");
 
-        self.plugin_manager.run_plugins()?;
+        self.plugin_handler
+            .run_plugins()
+            .map_err(anyhow::Error::new)?;
 
         Ok(())
     }
@@ -28,7 +28,6 @@ impl<T: PluginHandler> Engine<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::plugin_manager::Result;
     use std::collections::HashMap;
 
     mod run {
@@ -37,38 +36,34 @@ mod tests {
         #[test]
         fn works() {
             let mut engine = mock_engine();
-            engine.plugin_manager.plugins.insert("foo".to_owned(), 0);
+            engine.plugin_handler.plugins.insert("foo".to_owned(), 0);
 
             engine.run().unwrap();
             engine.run().unwrap();
 
-            assert_eq!(engine.plugin_manager.plugins.get("foo"), Some(&2));
+            assert_eq!(engine.plugin_handler.plugins.get("foo"), Some(&2));
         }
     }
 
-    fn mock_engine() -> Engine<MockPluginManager> {
-        let plugin_manager = MockPluginManager::default();
-        Engine { plugin_manager }
+    fn mock_engine() -> Engine<MockHandler> {
+        let plugin_handler = MockHandler::default();
+        Engine { plugin_handler }
     }
 
     #[derive(Default)]
-    struct MockPluginManager {
+    struct MockHandler {
         plugins: HashMap<String, usize>,
     }
 
-    impl PluginHandler for MockPluginManager {
-        fn new() -> Self {
-            MockPluginManager {
-                plugins: HashMap::new(),
-            }
-        }
+    impl Handler for MockHandler {
+        type Error = std::ffi::NulError;
 
-        fn register_plugin(&mut self, path: &str) -> Result<()> {
+        fn register_plugin(&mut self, path: &str) -> Result<(), Self::Error> {
             self.plugins.insert(path.to_owned(), 0);
             Ok(())
         }
 
-        fn run_plugins(&mut self) -> Result<()> {
+        fn run_plugins(&mut self) -> Result<(), Self::Error> {
             for (_, val) in self.plugins.iter_mut() {
                 *val += 1;
             }

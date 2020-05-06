@@ -1,11 +1,7 @@
-mod wasm;
+pub(crate) mod wasm;
 
-use crate::error::PluginError as Error;
 use displaydoc::Display;
-pub use wasm::Wasm;
-use wasmtime::Instance;
-
-type Result<T> = std::result::Result<T, Error>;
+pub use wasm::{Wasm, WasmManager};
 
 /// A list of exported functions the engine expects a plugin to have.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Display)]
@@ -14,11 +10,26 @@ pub enum Func {
     Run,
 }
 
-/// This trait makes it possible for a plugin to run to completion.
-pub trait Plugin {
-    type Error: std::error::Error;
+/// A runtime is configured to run all methods required for a plugin to be
+/// usable by the engine.
+pub trait Runtime {
+    type Data;
+    type Error: std::error::Error + Send + Sync + 'static;
 
-    // TODO: untie this from the trait
-    fn new(instance: Instance) -> Self;
-    fn run(&self) -> Result<()>;
+    fn new(data: Self::Data) -> Self;
+    fn run(&self) -> Result<(), Self::Error>;
+}
+
+/// A handler takes ownership of external plugins, and runs them when requested.
+pub trait Handler {
+    type Error: std::error::Error + Send + Sync + 'static;
+
+    /// Run all registered plugins.
+    fn run_plugins(&mut self) -> Result<(), Self::Error>;
+
+    /// Register a new plugin to handle.
+    ///
+    /// TODO: have this take `Into<Self::Plugin>` which would allow us to
+    /// implement `From<Path>` for example for Wasm.
+    fn register_plugin(&mut self, path: &str) -> Result<(), Self::Error>;
 }

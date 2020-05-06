@@ -1,5 +1,5 @@
-use crate::error::EngineBuilderError as Error;
-use crate::plugin_manager::{PluginHandler, PluginManager};
+use crate::error::Builder as Error;
+use crate::plugin::{Handler, WasmManager};
 use crate::Engine;
 
 type Result<T> = std::result::Result<T, Error>;
@@ -18,15 +18,15 @@ impl<'a> Builder<'a> {
 
 impl<'a> Builder<'a> {
     pub fn build(self) -> Result<Engine> {
-        let mut plugin_manager = PluginManager::new();
+        let mut plugin_handler = WasmManager::default();
 
         for path in &self.plugin_paths {
             for plugin in find_plugins_in_path(path)? {
-                plugin_manager.register_plugin(&plugin)?;
+                plugin_handler.register_plugin(&plugin)?;
             }
         }
 
-        Ok(Engine { plugin_manager })
+        Ok(Engine { plugin_handler })
     }
 }
 

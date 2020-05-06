@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog], and this project adheres to
 
 ## _[Unreleased]_
 
+- refactor: add concrete WasmManager impl
 - refactor: remove unused code
 - refactor: module reshuffling
 - chore: update dependencies

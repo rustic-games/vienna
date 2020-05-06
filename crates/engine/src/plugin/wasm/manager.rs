@@ -1,36 +1,20 @@
-use crate::error::PluginManagerError as Error;
-use crate::plugin::Plugin;
+use super::plugin::Plugin;
+use super::HandlerError;
+use crate::plugin::{Handler, Runtime};
 use std::fmt;
+use wasmtime::{Instance, Module, Store};
 
-pub(crate) type Result<T> = std::result::Result<T, Error>;
-
-/// The `PluginHandler` trait allows an object to manage a set of plugins.
-pub trait PluginHandler {
-    fn new() -> Self;
-
-    /// Run all registered plugins.
-    fn run_plugins(&mut self) -> Result<()>;
-
-    /// Register a new plugin to handle.
-    fn register_plugin(&mut self, path: &str) -> Result<()>;
-}
-
-/// The object responsible for "managing" engine plugins.
-///
-/// The responsibility of this manager includes:
-///
-/// - Loading new Wasm-based plugins.
-/// - Running plugins when requested.
+/// The object responsible for "managing" Wasm plugins.
 #[derive(Default)]
-pub struct PluginManager<T: Plugin> {
+pub struct Manager {
     /// The list of plugins this plugin manager is responsible for.
-    plugins: Vec<T>,
+    plugins: Vec<Plugin>,
 
     // The wasm cache used by the `wasmtime` Wasm runtime.
-    plugin_store: wasmtime::Store,
+    plugin_store: Store,
 }
 
-impl<T: Plugin + fmt::Debug> fmt::Debug for PluginManager<T> {
+impl fmt::Debug for Manager {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PluginManager")
             .field("plugins", &self.plugins)
@@ -39,15 +23,10 @@ impl<T: Plugin + fmt::Debug> fmt::Debug for PluginManager<T> {
     }
 }
 
-impl<T: Plugin> PluginHandler for PluginManager<T> {
-    fn new() -> Self {
-        Self {
-            plugins: vec![],
-            plugin_store: wasmtime::Store::default(),
-        }
-    }
+impl Handler for Manager {
+    type Error = HandlerError;
 
-    fn run_plugins(&mut self) -> Result<()> {
+    fn run_plugins(&mut self) -> Result<(), Self::Error> {
         for plugin in &self.plugins {
             plugin.run()?
         }
@@ -55,12 +34,10 @@ impl<T: Plugin> PluginHandler for PluginManager<T> {
         Ok(())
     }
 
-    fn register_plugin(&mut self, path: &str) -> Result<()> {
-        use wasmtime::{Instance, Module};
-
+    fn register_plugin(&mut self, path: &str) -> Result<(), Self::Error> {
         let module = Module::from_file(&self.plugin_store, path).map_err(|err| (path, err))?;
         let instance = Instance::new(&module, &[]).map_err(|err| (path, err))?;
-        let plugin = T::new(instance);
+        let plugin = Plugin::new(instance);
 
         self.plugins.push(plugin);
 
@@ -79,14 +56,14 @@ mod tests {
 
         #[test]
         fn empty() {
-            let mut manager = manager();
+            let mut manager = Manager::default();
 
             assert!(manager.run_plugins().is_ok())
         }
 
         #[test]
         fn multiple() {
-            let mut manager = manager();
+            let mut manager = Manager::default();
 
             let p = plugin(r#"(module (func (export "_run")))"#);
             manager.plugins.push(p);
@@ -99,7 +76,7 @@ mod tests {
 
         #[test]
         fn with_failure() {
-            let mut manager = manager();
+            let mut manager = Manager::default();
 
             let p = plugin(r#"(module (func (export "_run")))"#);
             manager.plugins.push(p);
@@ -109,7 +86,7 @@ mod tests {
 
             let err = manager.run_plugins().unwrap_err();
 
-            assert_eq!(err.to_string(), format!("error running plugin"))
+            assert_eq!(err.to_string(), format!("error running wasm instance"))
         }
     }
 
@@ -120,14 +97,14 @@ mod tests {
         fn valid() {
             let (_guard, path) = wasm(r#"(module (func (export "_run")))"#);
 
-            assert!(manager().register_plugin(&path).is_ok())
+            assert!(Manager::default().register_plugin(&path).is_ok())
         }
 
         #[test]
         fn invalid_wasm() {
             let (_guard, path) = wasm(r#"INVALID"#);
 
-            let err = manager().register_plugin(&path).unwrap_err();
+            let err = Manager::default().register_plugin(&path).unwrap_err();
 
             assert_eq!(err.to_string(), format!("invalid wasm module `{}`", path))
         }
@@ -136,17 +113,13 @@ mod tests {
         fn missing_file() {
             let path = "/missing/file";
 
-            let err = manager().register_plugin(&path).unwrap_err();
+            let err = Manager::default().register_plugin(&path).unwrap_err();
 
             assert_eq!(
                 err.to_string(),
                 format!("inaccessible wasm module `{}` (NotFound)", path)
             )
         }
-    }
-
-    fn manager() -> PluginManager<Wasm> {
-        PluginManager::new()
     }
 
     fn wasm(wasm: &str) -> (NamedTempFile, String) {
@@ -163,8 +136,6 @@ mod tests {
     }
 
     fn plugin(wasm: &str) -> Wasm {
-        use wasmtime::{Instance, Module};
-
         let store = wasmtime::Store::default();
         let module = Module::new(&store, wasm).unwrap();
         let instance = Instance::new(&module, &[]).unwrap();
