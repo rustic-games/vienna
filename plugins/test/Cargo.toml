@@ -7,3 +7,6 @@ publish = false
 
 [lib]
 crate-type = ['cdylib']
+
+[dependencies]
+vienna = { path = "../../crates/sdk" }

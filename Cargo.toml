@@ -3,6 +3,7 @@
 members = [
     "crates/engine",
     "crates/runner",
+    "crates/sdk",
 ]
 
 exclude = [

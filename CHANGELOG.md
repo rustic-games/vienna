@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog], and this project adheres to
 
 ## _[Unreleased]_
 
+- feat: introduce SDK crate
 - feat: add option to continuously run game loop
 - refactor: remove generic types
 - refactor: add concrete WasmManager impl
