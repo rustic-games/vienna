@@ -7,7 +7,7 @@ use thiserror::Error;
 /// produce.
 #[derive(Debug, Display, Error)]
 pub enum Error {
-    /// EngineBuilder error
+    /// engine builder error
     EngineBuilder(#[from] EngineBuilderError),
 
     /// plugin manager error
@@ -20,8 +20,9 @@ pub enum Error {
     Unknown,
 }
 
-/// EngineBuilder related errors.
+/// `EngineBuilder` related errors.
 #[derive(Debug, Display, Error)]
+#[allow(clippy::module_name_repetitions)]
 pub enum EngineBuilderError {
     /// inaccessible wasm module `{path}` ({kind:?})
     Io { path: String, kind: io::ErrorKind },
@@ -53,8 +54,9 @@ impl From<walkdir::Error> for EngineBuilderError {
     }
 }
 
-/// Plugin related errors.
+/// `Plugin` related errors.
 #[derive(Debug, Display, Error)]
+#[allow(clippy::module_name_repetitions)]
 pub enum PluginError {
     /// missing exported `{0}` function
     MissingExportedFunction(Func),
@@ -66,8 +68,9 @@ pub enum PluginError {
     RuntimeError { func: Func, source: wasmtime::Trap },
 }
 
-/// PluginManager related errors.
+/// `PluginManager` related errors.
 #[derive(Debug, Display, Error)]
+#[allow(clippy::module_name_repetitions)]
 pub enum PluginManagerError {
     /// inaccessible wasm module `{path}` ({kind:?})
     Io { path: String, kind: io::ErrorKind },

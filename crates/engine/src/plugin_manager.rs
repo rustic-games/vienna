@@ -34,14 +34,14 @@ impl<T: Plugin + fmt::Debug> fmt::Debug for PluginManager<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PluginManager")
             .field("plugins", &self.plugins)
-            .field("plugin_store", &format!("wasmtime::Store"))
+            .field("plugin_store", &"wasmtime::Store".to_string())
             .finish()
     }
 }
 
 impl<T: Plugin> PluginHandler for PluginManager<T> {
     fn new() -> Self {
-        PluginManager {
+        Self {
             plugins: vec![],
             plugin_store: wasmtime::Store::default(),
         }

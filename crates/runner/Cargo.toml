@@ -1,8 +1,14 @@
 [package]
 name = "vienna-runner"
 version = "0.1.0"
+description = "A binary capable of running Vienna-based visual novels."
+repository = "https://github.com/rustic-games/vienna"
+readme = "README.md"
+keywords = ["game-engine", "visual-novel"]
+categories = ["game-engines"]
 authors = ["Jean Mertz <git@jeanmertz.com>"]
 edition = "2018"
+license = "Proprietary"
 publish = false
 
 [dependencies]

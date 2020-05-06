@@ -1,5 +1,5 @@
-#![warn(clippy::all)]
-#![warn(clippy::pedantic)]
+#![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
+#![allow(clippy::multiple_crate_versions)]
 
 use engine::Engine;
 
@@ -10,5 +10,6 @@ fn main() -> anyhow::Result<()> {
 
     engine.run()?;
 
-    Ok(println!("success"))
+    println!("success");
+    Ok(())
 }
