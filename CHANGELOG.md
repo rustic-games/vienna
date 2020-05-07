@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog], and this project adheres to
 
 ## _[Unreleased]_
 
+- rfc: plugins
 - rfc: rfc process
 - feat: introduce SDK crate
 - feat: add option to continuously run game loop
