@@ -6,10 +6,10 @@ macro_rules! load {
         #[no_mangle]
         /// Run the plugin on every game update.
         pub extern "C" fn _run() {
-            match run() {
-                Ok(()) => {}
-                Err(err) => panic!("{:?}", err),
-            }
+            // Explicit type to improve compiler error for plugin authors.
+            let result: Result<()> = run();
+
+            $crate::run(result);
         }
     };
 }

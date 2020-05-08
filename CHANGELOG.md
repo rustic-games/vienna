@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog], and this project adheres to
 
 ## _[Unreleased]_
 
+- refactor: move SDK logic out of macro
 - style: resolve clippy warnings
 - refactor: move plugin instantiation into plugin
 - rfc: events
