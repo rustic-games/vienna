@@ -17,7 +17,7 @@ impl<'a> Builder<'a> {
         self
     }
 
-    pub fn continuous(mut self) -> Self {
+    pub const fn continuous(mut self) -> Self {
         self.continuous = true;
         self
     }

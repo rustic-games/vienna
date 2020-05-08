@@ -15,9 +15,6 @@ pub enum Error {
 
     /// plugin runtime error
     PluginRuntime(#[from] Runtime),
-
-    /// unknown engine error
-    Unknown,
 }
 
 /// `EngineBuilder` related errors.

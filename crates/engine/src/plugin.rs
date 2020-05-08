@@ -1,5 +1,5 @@
-pub(crate) mod mock;
-pub(crate) mod wasm;
+pub(super) mod mock;
+pub(super) mod wasm;
 
 use crate::error;
 use core::fmt;
