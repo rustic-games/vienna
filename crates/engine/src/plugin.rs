@@ -4,6 +4,7 @@ pub(crate) mod wasm;
 use crate::error;
 use core::fmt;
 use displaydoc::Display;
+use std::path::Path;
 
 /// A list of exported functions the engine expects a plugin to have.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Display)]
@@ -42,10 +43,7 @@ pub trait Handler {
     fn run_plugins(&mut self) -> Result<(), error::Runtime>;
 
     /// Register a new plugin to handle.
-    ///
-    /// TODO: have this take `Into<Self::Plugin>` which would allow us to
-    /// implement `From<Path>` for example for Wasm.
-    fn register_plugin(&mut self, path: &str) -> Result<(), error::Handler>;
+    fn register_plugin(&mut self, file: &Path) -> Result<(), error::Handler>;
 
     /// Get the concrete `wasm::Manager` implementation, if the underlying type
     /// matches.

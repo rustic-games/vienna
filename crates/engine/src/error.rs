@@ -45,6 +45,10 @@ pub enum Runtime {
 pub enum Handler {
     /// wasm handler error
     WasmHandler(#[from] wasm::HandlerError),
+
+    /// runtime error
+    #[error(transparent)]
+    Runtime(#[from] Runtime),
 }
 
 impl From<walkdir::Error> for Builder {

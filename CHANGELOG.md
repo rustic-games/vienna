@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog], and this project adheres to
 
 ## _[Unreleased]_
 
+- refactor: move plugin instantiation into plugin
 - rfc: events
 - rfc: plugins
 - rfc: rfc process

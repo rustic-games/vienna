@@ -1,6 +1,7 @@
 use crate::error::Builder as Error;
 use crate::plugin::{wasm, Handler};
 use crate::Engine;
+use std::path::PathBuf;
 
 type Result<T> = std::result::Result<T, Error>;
 
@@ -44,7 +45,7 @@ impl<'a> Builder<'a> {
 /// Files with duplicate names are ignored. Even if two plugins reside in
 /// different directories, if their names are equal, only the first one is added
 /// to the list of plugins.
-fn find_plugins_in_path(path: &str) -> Result<Vec<String>> {
+fn find_plugins_in_path(path: &str) -> Result<Vec<PathBuf>> {
     use std::collections::HashSet;
     use std::ffi::OsStr;
     use walkdir::WalkDir;
@@ -69,10 +70,8 @@ fn find_plugins_in_path(path: &str) -> Result<Vec<String>> {
                 continue;
             }
 
-            if let Some(path) = path.to_str() {
-                paths.push(path.to_owned());
-                duplicates.insert(file.to_owned());
-            }
+            paths.push(path.to_owned());
+            duplicates.insert(file.to_owned());
         }
     }
 

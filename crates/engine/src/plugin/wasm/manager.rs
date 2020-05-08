@@ -1,9 +1,8 @@
-use super::plugin::Plugin;
 use super::HandlerError;
 use crate::error;
-use crate::plugin::{Handler, Runtime};
-use std::fmt;
-use wasmtime::{Instance, Module, Store};
+use crate::plugin::{wasm::Plugin, Handler, Runtime};
+use std::{fmt, fs, path::Path};
+use wasmtime::Store;
 
 /// The object responsible for "managing" Wasm plugins.
 #[derive(Default)]
@@ -11,7 +10,7 @@ pub struct Manager {
     /// The list of plugins this plugin manager is responsible for.
     plugins: Vec<Plugin>,
 
-    // The wasm cache used by the `wasmtime` Wasm runtime.
+    /// The wasm cache used by the `wasmtime` Wasm runtime.
     plugin_store: Store,
 }
 
@@ -33,16 +32,12 @@ impl Handler for Manager {
         Ok(())
     }
 
-    fn register_plugin(&mut self, path: &str) -> Result<(), error::Handler> {
-        let module = Module::from_file(&self.plugin_store, path)
-            .map_err(|err| (path, err))
+    fn register_plugin(&mut self, file: &Path) -> Result<(), error::Handler> {
+        let source = fs::read(file)
+            .map_err(|err| (file.to_owned(), err))
             .map_err(HandlerError::from)?;
 
-        let instance = Instance::new(&module, &[])
-            .map_err(|err| (path, err))
-            .map_err(HandlerError::from)?;
-
-        let plugin = Plugin::new(instance);
+        let plugin = Plugin::new(&self.plugin_store, source).map_err(error::Runtime::from)?;
 
         self.plugins.push(plugin);
 
@@ -57,6 +52,7 @@ impl Handler for Manager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::PathBuf;
     use tempfile::NamedTempFile;
 
     mod run_plugins {
@@ -123,18 +119,15 @@ mod tests {
 
             assert_eq!(
                 format!("{:?}", err),
-                format!(
-                    "wasm handler error\n\n\
+                "runtime error\n\n\
 
-                     Caused by:\n    \
-                         0: invalid wasm module `{0}`\n    \
-                         1: expected `(`\n            \
-                                 --> {0}:1:1\n             \
-                                 |\n           \
-                               1 | INVALID\n             \
-                                 | ^",
-                    &path
-                )
+                    Caused by:\n    \
+                        0: invalid wasm module\n    \
+                        1: expected `(`\n            \
+                                --> <anon>:1:1\n             \
+                                |\n           \
+                            1 | INVALID\n             \
+                                | ^"
             )
         }
 
@@ -142,7 +135,7 @@ mod tests {
         fn missing_file() {
             let path = "/missing/file";
 
-            let result = Manager::default().register_plugin(&path);
+            let result = Manager::default().register_plugin(Path::new(path));
             let err = anyhow::Error::new(result.unwrap_err());
 
             assert_eq!(
@@ -155,24 +148,21 @@ mod tests {
         }
     }
 
-    fn wasm(wasm: &str) -> (NamedTempFile, String) {
+    fn wasm(wasm: &str) -> (NamedTempFile, PathBuf) {
         use std::io::Write;
 
         let mut file = NamedTempFile::new().expect("temporary file");
+        let path = file.path().to_owned();
+
         file.as_file_mut()
             .write_all(wasm.as_bytes())
             .expect("written bytes");
-
-        let path = file.path().to_str().expect("valid path").to_owned();
 
         (file, path)
     }
 
     fn plugin(wasm: &str) -> Plugin {
-        let store = wasmtime::Store::default();
-        let module = Module::new(&store, wasm).unwrap();
-        let instance = Instance::new(&module, &[]).unwrap();
-
-        Plugin::new(instance)
+        let store = Store::default();
+        Plugin::new(&store, wasm).unwrap()
     }
 }

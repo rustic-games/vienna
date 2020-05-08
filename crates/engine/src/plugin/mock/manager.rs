@@ -1,6 +1,7 @@
 use super::plugin::Plugin;
 use crate::error;
 use crate::plugin::{Handler, Runtime};
+use std::path::Path;
 
 /// A mock plugin implementation
 #[derive(Debug, Default)]
@@ -17,7 +18,7 @@ impl Handler for Manager {
         Ok(())
     }
 
-    fn register_plugin(&mut self, _: &str) -> Result<(), error::Handler> {
+    fn register_plugin(&mut self, _: &Path) -> Result<(), error::Handler> {
         let plugin = Plugin::default();
         self.plugins.push(plugin);
 
@@ -52,8 +53,8 @@ mod tests {
         #[test]
         fn works() {
             let mut manager = Manager::default();
-            manager.register_plugin("").unwrap();
-            manager.register_plugin("").unwrap();
+            manager.register_plugin(Path::new("")).unwrap();
+            manager.register_plugin(Path::new("")).unwrap();
 
             assert_eq!(manager.plugins.len(), 2)
         }

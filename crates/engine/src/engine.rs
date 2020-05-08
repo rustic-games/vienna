@@ -55,12 +55,13 @@ impl Engine {
 mod tests {
     use super::*;
     use crate::plugin::mock;
+    use std::path::Path;
 
     #[test]
     fn run() {
         let continuous = false;
         let mut plugin_handler = mock::Manager::default();
-        plugin_handler.register_plugin("").unwrap();
+        plugin_handler.register_plugin(Path::new("")).unwrap();
 
         let plugin_handler = Box::new(plugin_handler);
         let mut engine = Engine {
