@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog], and this project adheres to
 
 ## _[Unreleased]_
 
+- refactor: remove unused Debug impl
 - feat: show path to plugin on error
 - feat: add a "minimal" plugin example
 - feat: add plugin initialization support

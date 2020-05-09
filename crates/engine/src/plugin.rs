@@ -38,12 +38,6 @@ pub trait Runtime {
     }
 }
 
-impl fmt::Debug for dyn Runtime {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("dyn Runtime")
-    }
-}
-
 /// A handler takes ownership of external plugins, and runs them when requested.
 pub trait Handler {
     /// Run all registered plugins.
