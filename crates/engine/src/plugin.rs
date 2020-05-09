@@ -9,6 +9,9 @@ use std::path::Path;
 /// A list of exported functions the engine expects a plugin to have.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Display)]
 pub enum Func {
+    /// _init
+    Init,
+
     /// _run
     Run,
 }
@@ -16,7 +19,11 @@ pub enum Func {
 /// A runtime is configured to run all methods required for a plugin to be
 /// usable by the engine.
 pub trait Runtime {
+    /// Run the plugin to completion.
     fn run(&mut self) -> Result<(), error::Runtime>;
+
+    /// The name of the plugin.
+    fn name(&self) -> &str;
 
     /// Get the concrete `wasm::Plugin` implementation, if the underlying type
     /// matches.

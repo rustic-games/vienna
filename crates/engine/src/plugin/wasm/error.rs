@@ -15,6 +15,18 @@ pub enum Runtime {
     /// invalid exported `{func}` function
     InvalidExportedFunction { func: Func, source: Error },
 
+    /// failed registration
+    Registration,
+
+    /// cannot access runtime memory
+    MemoryAccess,
+
+    /// UTF-8 error
+    Utf8(#[from] std::str::Utf8Error),
+
+    /// codec error
+    Codec(#[from] serde_json::Error),
+
     /// error running `{func}`
     Failed { func: Func, source: Trap },
 

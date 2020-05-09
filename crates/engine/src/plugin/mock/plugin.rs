@@ -14,6 +14,10 @@ impl Runtime for Plugin {
         Ok(())
     }
 
+    fn name(&self) -> &str {
+        ""
+    }
+
     fn as_mock(&mut self) -> Option<&mut Self> {
         Some(self)
     }
@@ -23,16 +27,17 @@ impl Runtime for Plugin {
 mod tests {
     use super::*;
 
-    mod run {
-        use super::*;
+    #[test]
+    fn run() {
+        let mut mock = Plugin::default();
+        mock.run().unwrap();
+        mock.run().unwrap();
 
-        #[test]
-        fn counts() {
-            let mut mock = Plugin::default();
-            mock.run().unwrap();
-            mock.run().unwrap();
+        assert_eq!(mock.runs, 2)
+    }
 
-            assert_eq!(mock.runs, 2)
-        }
+    #[test]
+    fn name() {
+        assert_eq!(Plugin::default().name(), "")
     }
 }

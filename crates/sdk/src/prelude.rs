@@ -1,1 +1,3 @@
-pub use anyhow::{bail, Error, Result};
+pub use crate::Registration;
+pub use anyhow::{bail, Result};
+pub use serde::{Deserialize, Serialize};

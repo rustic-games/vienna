@@ -39,6 +39,7 @@ impl Handler for Manager {
 
         let plugin = Plugin::new(&self.plugin_store, source).map_err(error::Runtime::from)?;
 
+        println!("plugin registered: {}", plugin.name());
         self.plugins.push(plugin);
 
         Ok(())
@@ -67,12 +68,13 @@ mod tests {
 
         #[test]
         fn multiple() {
+            use crate::plugin::wasm::plugin::tests::WAT_VALID;
             let mut manager = Manager::default();
 
-            let p = plugin(r#"(module (func (export "_run")))"#);
+            let p = plugin(WAT_VALID);
             manager.plugins.push(p);
 
-            let p = plugin(r#"(module (func (export "_run")))"#);
+            let p = plugin(WAT_VALID);
             manager.plugins.push(p);
 
             assert!(manager.run_plugins().is_ok())
@@ -80,12 +82,13 @@ mod tests {
 
         #[test]
         fn with_failure() {
+            use crate::plugin::wasm::plugin::tests::{WAT_MISSING_FUNC, WAT_VALID};
             let mut manager = Manager::default();
 
-            let p = plugin(r#"(module (func (export "_run")))"#);
+            let p = plugin(WAT_VALID);
             manager.plugins.push(p);
 
-            let p = plugin(r#"(module (func (export "INVALID")))"#);
+            let p = plugin(WAT_MISSING_FUNC);
             manager.plugins.push(p);
 
             let err = anyhow::Error::new(manager.run_plugins().unwrap_err());
@@ -105,7 +108,8 @@ mod tests {
 
         #[test]
         fn valid() {
-            let (_guard, path) = wasm(r#"(module (func (export "_run")))"#);
+            use crate::plugin::wasm::plugin::tests::WAT_VALID;
+            let (_guard, path) = wasm(WAT_VALID);
 
             assert!(Manager::default().register_plugin(&path).is_ok())
         }

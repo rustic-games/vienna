@@ -1,5 +1,9 @@
 vienna::load!();
 
+fn init() -> Registration {
+    Registration::new("test")
+}
+
 fn run() -> Result<()> {
-    Ok(())
+    bail!("woops!")
 }
