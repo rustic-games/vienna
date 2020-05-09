@@ -30,7 +30,7 @@ pub enum Runtime {
     /// error running `{func}`
     Failed { func: Func, source: Trap },
 
-    /// invalid wasm module
+    /// unable to run module
     InvalidModule(#[source] anyhow::Error),
 
     /// unknown wasm error
@@ -62,6 +62,15 @@ impl From<anyhow::Error> for Runtime {
 pub enum Handler {
     /// inaccessible wasm module `{path}` ({kind:?})
     Io { path: PathBuf, kind: io::ErrorKind },
+
+    /// invalid wasm module `{path}`
+    InvalidPlugin { path: PathBuf, source: Runtime },
+}
+
+impl From<(PathBuf, Runtime)> for Handler {
+    fn from((path, source): (PathBuf, Runtime)) -> Self {
+        Self::InvalidPlugin { path, source }
+    }
 }
 
 impl From<(PathBuf, io::Error)> for Handler {

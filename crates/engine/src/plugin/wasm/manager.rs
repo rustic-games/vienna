@@ -37,7 +37,9 @@ impl Handler for Manager {
             .map_err(|err| (file.to_owned(), err))
             .map_err(HandlerError::from)?;
 
-        let plugin = Plugin::new(&self.plugin_store, source).map_err(error::Runtime::from)?;
+        let plugin = Plugin::new(&self.plugin_store, source)
+            .map_err(|err| (file.to_owned(), err))
+            .map_err(HandlerError::from)?;
 
         println!("plugin registered: {}", plugin.name());
         self.plugins.push(plugin);
@@ -123,15 +125,19 @@ mod tests {
 
             assert_eq!(
                 format!("{:?}", err),
-                "runtime error\n\n\
+                format!(
+                    "wasm handler error\n\n\
 
-                    Caused by:\n    \
-                        0: invalid wasm module\n    \
-                        1: expected `(`\n            \
-                                --> <anon>:1:1\n             \
-                                |\n           \
-                            1 | INVALID\n             \
-                                | ^"
+                     Caused by:\n    \
+                         0: invalid wasm module `{}`\n    \
+                         1: unable to run module\n    \
+                         2: expected `(`\n            \
+                                 --> <anon>:1:1\n             \
+                                  |\n           \
+                                1 | INVALID\n             \
+                                  | ^",
+                    &path.to_string_lossy()
+                )
             )
         }
 

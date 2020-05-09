@@ -137,7 +137,7 @@ pub(super) mod tests {
 
             assert_eq!(
                 format!("{:?}", err),
-                "invalid wasm module\n\n\
+                "unable to run module\n\n\
 
                  Caused by:\n    \
                      expected `(`\n         \
