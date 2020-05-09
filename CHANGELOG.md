@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog], and this project adheres to
 
 ## _[Unreleased]_
 
+- feat: add a "minimal" plugin example
 - feat: add plugin initialization support
 - refactor: move SDK logic out of macro
 - style: resolve clippy warnings

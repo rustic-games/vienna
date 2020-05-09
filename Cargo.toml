@@ -7,5 +7,6 @@ members = [
 ]
 
 exclude = [
+    "plugins/minimal",
     "plugins/test",
 ]

@@ -1,0 +1,9 @@
+[package]
+name = "minimal"
+version = "0.1.0"
+authors = ["Jean Mertz <git@jeanmertz.com>"]
+edition = "2018"
+publish = false
+
+[lib]
+crate-type = ['cdylib']
