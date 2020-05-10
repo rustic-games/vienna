@@ -1,77 +1,92 @@
-use crate::{error, plugin::Handler, Builder, Error};
+use crate::{config, error, plugin::Handler, Builder, Error, GameState, Renderer, Updater};
+use ggez::{event::EventHandler, Context, GameResult};
+use std::path::Path;
 
 #[derive(Debug)]
 pub struct Engine {
-    pub(crate) plugin_handler: Box<dyn Handler>,
-    pub(crate) continuous: bool,
+    /// The global engine configuration.
+    pub(super) config: config::Engine,
+
+    /// The updater of the engine.
+    pub(super) updater: Updater,
+
+    /// The renderer of the engine.
+    pub(super) renderer: Renderer,
+
+    /// The state of the game.
+    pub(super) game_state: GameState,
+
+    /// The plugin store.
+    pub(super) plugin_handler: Box<dyn Handler>,
+}
+
+impl Default for Engine {
+    fn default() -> Self {
+        let plugin_handler = Box::new(crate::plugin::wasm::Manager::default());
+
+        Self {
+            config: config::Engine::default(),
+            updater: config::Updater::default().into(),
+            renderer: config::Renderer::default().into(),
+            game_state: GameState::default(),
+            plugin_handler,
+        }
+    }
 }
 
 impl Engine {
     pub fn builder<'a>() -> Builder<'a> {
         Builder::default()
     }
-}
 
-impl Engine {
-    /// Run the engine to completion.
-    pub fn run(&mut self) -> Result<(), Error> {
-        use std::thread::sleep;
-        use std::time::{Duration, Instant};
+    pub fn run(mut self) -> Result<(), Error> {
+        use ggez::conf::{ModuleConf, NumSamples, WindowSetup};
+        use ggez::{event, ContextBuilder};
 
-        println!("Hello, from engine!");
+        let window_setup = WindowSetup {
+            title: "Vienna: work in progress".to_owned(),
+            samples: NumSamples::Zero,
+            vsync: true,
+            icon: "".to_owned(),
+            srgb: true,
+        };
 
-        let mut total_duration = Duration::default();
-        let mut timer = Instant::now();
-        let mut count = 0;
+        let modules = ModuleConf {
+            gamepad: false,
+            audio: true,
+        };
 
-        loop {
-            count += 1;
-            let tick_duration = timer.elapsed();
-            total_duration += tick_duration;
+        let (mut ctx, mut event_loop) = ContextBuilder::new("Vienna", "")
+            .window_setup(window_setup)
+            .modules(modules)
+            .with_conf_file(false)
+            .add_resource_path(Path::new("./resources"))
+            .build()
+            .unwrap();
 
-            println!(
-                "game tick | count={:<3}  duration_since_previous_tick={:.3?}    duration_total={:.3?}",
-                count, tick_duration, total_duration
-            );
-
-            timer = Instant::now();
-
-            self.plugin_handler
-                .run_plugins()
-                .map_err(error::Runtime::from)?;
-
-            if !self.continuous {
-                break;
-            }
-
-            sleep(Duration::new(1, 0))
-        }
-
-        Ok(())
+        event::run(&mut ctx, &mut event_loop, &mut self).map_err(Into::into)
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::plugin::mock;
-    use std::path::Path;
+impl EventHandler for Engine {
+    fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
+        let handler = self.plugin_handler.as_mut();
 
-    #[test]
-    fn run() {
-        let continuous = false;
-        let mut plugin_handler = mock::Manager::default();
-        plugin_handler.register_plugin(Path::new("")).unwrap();
+        self.updater
+            .run(&mut self.game_state, handler)
+            .map_err(|err| match err {
+                // this is the only native error type supported by ggez
+                error::Updater::GameEngine(err) => err,
 
-        let plugin_handler = Box::new(plugin_handler);
-        let mut engine = Engine {
-            plugin_handler,
-            continuous,
-        };
+                // any other errors can't be propagated in a nice way, so we'll
+                // make due with what we have.
+                error::Updater::PluginRuntime(err) => ggez::GameError::RenderError(err.to_string()),
+            })
+    }
 
-        engine.run().unwrap();
-        engine.run().unwrap();
+    fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
+        let progress = self.updater.step_progress;
 
-        assert_eq!(engine.plugin_handler.as_mock().unwrap().plugins[0].runs, 2);
+        self.renderer.run(ctx, &self.game_state, progress)
     }
 }

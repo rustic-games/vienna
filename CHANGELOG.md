@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog], and this project adheres to
 
 ## _[Unreleased]_
 
+- feat: add initial game loop and window
 - rfc: widgets
 - refactor: remove unused Debug impl
 - feat: show path to plugin on error

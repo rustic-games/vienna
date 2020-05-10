@@ -8,17 +8,11 @@ type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug, Default)]
 pub struct Builder<'a> {
     plugin_paths: Vec<&'a str>,
-    continuous: bool,
 }
 
 impl<'a> Builder<'a> {
     pub fn with_plugin_path(mut self, path: &'a str) -> Self {
         self.plugin_paths.push(path);
-        self
-    }
-
-    pub const fn continuous(mut self) -> Self {
-        self.continuous = true;
         self
     }
 }
@@ -35,7 +29,7 @@ impl<'a> Builder<'a> {
 
         Ok(Engine {
             plugin_handler,
-            continuous: self.continuous,
+            ..Engine::default()
         })
     }
 }

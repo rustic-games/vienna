@@ -4,15 +4,9 @@
 use engine::Engine;
 
 fn main() -> anyhow::Result<()> {
-    println!("Hello, from runner!");
-
-    let mut engine = Engine::builder()
+    Engine::builder()
         .with_plugin_path("plugins")
-        .continuous()
-        .build()?;
-
-    engine.run()?;
-
-    println!("success");
-    Ok(())
+        .build()?
+        .run()
+        .map_err(Into::into)
 }

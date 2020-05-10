@@ -1,5 +1,6 @@
 use crate::plugin::wasm;
 use displaydoc::Display;
+use ggez::error::GameError;
 use std::io;
 use thiserror::Error;
 
@@ -13,8 +14,8 @@ pub enum Error {
     /// plugin handler error
     PluginHandler(#[from] Handler),
 
-    /// plugin runtime error
-    PluginRuntime(#[from] Runtime),
+    /// game error
+    Game(#[from] GameError),
 }
 
 /// `EngineBuilder` related errors.
@@ -66,4 +67,14 @@ impl From<walkdir::Error> for Builder {
 
         Self::Unknown
     }
+}
+
+/// Game update related error
+#[derive(Debug, Display, Error)]
+pub enum Updater {
+    /// plugin runtime error
+    PluginRuntime(#[from] Runtime),
+
+    /// game engine error
+    GameEngine(#[from] GameError),
 }
