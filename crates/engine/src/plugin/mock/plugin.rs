@@ -1,14 +1,16 @@
 use crate::error;
 use crate::plugin::Runtime;
+use common::GameState;
 
 /// A mock plugin implementation
 #[derive(Debug, Default)]
 pub struct Plugin {
     pub(crate) runs: usize,
+    pub(crate) game_state: GameState,
 }
 
 impl Runtime for Plugin {
-    fn run(&mut self) -> Result<(), error::Runtime> {
+    fn run(&mut self, _: &mut GameState) -> Result<(), error::Runtime> {
         self.runs += 1;
 
         Ok(())
@@ -30,8 +32,9 @@ mod tests {
     #[test]
     fn run() {
         let mut mock = Plugin::default();
-        mock.run().unwrap();
-        mock.run().unwrap();
+        let mut game_state = GameState::default();
+        mock.run(&mut game_state).unwrap();
+        mock.run(&mut game_state).unwrap();
 
         assert_eq!(mock.runs, 2)
     }

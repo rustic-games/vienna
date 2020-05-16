@@ -18,6 +18,9 @@ pub enum Runtime {
     /// failed registration
     Registration,
 
+    /// missing plugin name
+    MissingName,
+
     /// cannot access runtime memory
     MemoryAccess,
 
@@ -27,6 +30,9 @@ pub enum Runtime {
     /// codec error
     Codec(#[from] serde_json::Error),
 
+    /// plugin error
+    Plugin(String),
+
     /// error running `{func}`
     Failed { func: Func, source: Trap },
 
@@ -35,6 +41,12 @@ pub enum Runtime {
 
     /// unknown wasm error
     Unknown(#[source] anyhow::Error),
+}
+
+impl From<std::num::TryFromIntError> for Runtime {
+    fn from(_: std::num::TryFromIntError) -> Self {
+        Self::MemoryAccess
+    }
 }
 
 impl From<anyhow::Error> for Runtime {

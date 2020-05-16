@@ -2540,6 +2540,15 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+ "vienna-common",
+]
+
+[[package]]
+name = "vienna-common"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -2553,7 +2562,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "thiserror",
- "vienna",
+ "vienna-common",
  "walkdir",
  "wasmtime",
 ]

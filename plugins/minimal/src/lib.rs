@@ -1,4 +1,5 @@
-const REGISTRATION: &str = r#"{"name":"minimal"}"#;
+const REGISTRATION: &str = r#"{"name":"minimal","write":{},"read":{}}"#;
+const RUN_RESULT: &str = r#"{"error":null,"state":{"owned":{"data":{}},"borrowed":{}}}"#;
 
 #[no_mangle]
 pub extern "C" fn _init() {
@@ -7,9 +8,15 @@ pub extern "C" fn _init() {
 }
 
 #[no_mangle]
-pub extern "C" fn _run() {
-    let mut slice: Box<[u8]> = vec![].into_boxed_slice();
-    unsafe { ffi::run_callback(slice.as_mut_ptr() as i32, slice.len() as i32) };
+pub extern "C" fn _run(_ptr: i32, _len: i32) {
+    let slice = RUN_RESULT.as_bytes();
+    unsafe { ffi::run_callback(slice.as_ptr() as i32, slice.len() as i32) };
+}
+
+#[no_mangle]
+pub extern "C" fn _malloc(len: i32) -> i32 {
+    let vec = Vec::<u8>::with_capacity(len as usize);
+    core::mem::ManuallyDrop::new(vec).as_mut_ptr() as i32
 }
 
 pub mod ffi {

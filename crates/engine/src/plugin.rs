@@ -2,6 +2,7 @@ pub(super) mod mock;
 pub(super) mod wasm;
 
 use crate::error;
+use common::GameState;
 use core::fmt;
 use displaydoc::Display;
 use std::path::Path;
@@ -14,13 +15,16 @@ pub enum Func {
 
     /// _run
     Run,
+
+    /// _malloc
+    Malloc,
 }
 
 /// A runtime is configured to run all methods required for a plugin to be
 /// usable by the engine.
 pub trait Runtime {
     /// Run the plugin to completion.
-    fn run(&mut self) -> Result<(), error::Runtime>;
+    fn run(&mut self, game_state: &mut GameState) -> Result<(), error::Runtime>;
 
     /// The name of the plugin.
     fn name(&self) -> &str;
@@ -41,10 +45,14 @@ pub trait Runtime {
 /// A handler takes ownership of external plugins, and runs them when requested.
 pub trait Handler {
     /// Run all registered plugins.
-    fn run_plugins(&mut self) -> Result<(), error::Runtime>;
+    fn run_plugins(&mut self, game_state: &mut GameState) -> Result<(), error::Runtime>;
 
     /// Register a new plugin to handle.
-    fn register_plugin(&mut self, file: &Path) -> Result<(), error::Handler>;
+    fn register_plugin(
+        &mut self,
+        game_state: &mut GameState,
+        file: &Path,
+    ) -> Result<(), error::Handler>;
 
     /// Get the concrete `wasm::Manager` implementation, if the underlying type
     /// matches.

@@ -1,34 +1,57 @@
 use crate::error::Builder as Error;
 use crate::plugin::{wasm, Handler};
 use crate::Engine;
+use common::GameState;
 use std::path::PathBuf;
 
 type Result<T> = std::result::Result<T, Error>;
 
+/// A builder used to create an [`Engine`].
 #[derive(Debug, Default)]
 pub struct Builder<'a> {
     plugin_paths: Vec<&'a str>,
+    game_state: Option<GameState>,
 }
 
 impl<'a> Builder<'a> {
+    /// Add a path from which *.wasm plugins are loaded.
+    ///
+    /// How it works:
+    ///
+    /// - The entire directory tree of the path is searched for plugins.
+    /// - A plugin is any file that has the "wasm" extension.
+    /// - Duplicate file names are ignored (even for different paths).
     pub fn with_plugin_path(mut self, path: &'a str) -> Self {
         self.plugin_paths.push(path);
         self
     }
-}
 
-impl<'a> Builder<'a> {
+    /// Use an existing game state.
+    ///
+    /// This can be used to resume an active game session.
+    pub fn with_game_state(mut self, game_state: GameState) -> Self {
+        self.game_state = Some(game_state);
+        self
+    }
+
+    /// Build the final [`Engine`].
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if anything is misconfigured.
     pub fn build(self) -> Result<Engine> {
+        let mut game_state = self.game_state.unwrap_or_default();
         let mut plugin_handler = Box::new(wasm::Manager::default());
 
         for path in &self.plugin_paths {
             for plugin in find_plugins_in_path(path)? {
-                plugin_handler.register_plugin(&plugin)?;
+                plugin_handler.register_plugin(&mut game_state, &plugin)?;
             }
         }
 
         Ok(Engine {
             plugin_handler,
+            game_state,
             ..Engine::default()
         })
     }
@@ -90,6 +113,8 @@ mod tests {
 
     mod build {
         use super::*;
+        use common::Value;
+        use std::collections::HashMap;
         use tempfile::NamedTempFile;
 
         #[test]
@@ -120,6 +145,23 @@ mod tests {
                 err.to_string(),
                 format!("inaccessible plugin `foo` (NotFound)")
             )
+        }
+
+        #[test]
+        fn with_game_state() {
+            let mut game_state = GameState::default();
+            let mut plugin_state = HashMap::default();
+            plugin_state.insert("bar".to_owned(), Value::Str("baz".to_owned()));
+            game_state.register_plugin_state("foo", plugin_state);
+
+            let builder = Builder::default();
+            let builder = builder.with_game_state(game_state);
+            let engine = builder.build().unwrap();
+
+            assert_eq!(
+                engine.game_state.get("foo", "bar"),
+                Some(&Value::Str("baz".to_owned()))
+            );
         }
     }
 }

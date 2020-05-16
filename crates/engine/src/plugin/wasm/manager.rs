@@ -1,6 +1,7 @@
 use super::HandlerError;
 use crate::error;
 use crate::plugin::{wasm::Plugin, Handler, Runtime};
+use common::GameState;
 use std::{fmt, fs, path::Path};
 use wasmtime::Store;
 
@@ -24,20 +25,24 @@ impl fmt::Debug for Manager {
 }
 
 impl Handler for Manager {
-    fn run_plugins(&mut self) -> Result<(), error::Runtime> {
+    fn run_plugins(&mut self, game_state: &mut GameState) -> Result<(), error::Runtime> {
         for plugin in &mut self.plugins {
-            plugin.run()?;
+            plugin.run(game_state)?;
         }
 
         Ok(())
     }
 
-    fn register_plugin(&mut self, file: &Path) -> Result<(), error::Handler> {
+    fn register_plugin(
+        &mut self,
+        game_state: &mut GameState,
+        file: &Path,
+    ) -> Result<(), error::Handler> {
         let source = fs::read(file)
             .map_err(|err| (file.to_owned(), err))
             .map_err(HandlerError::from)?;
 
-        let plugin = Plugin::new(&self.plugin_store, source)
+        let plugin = Plugin::new(&self.plugin_store, game_state, source)
             .map_err(|err| (file.to_owned(), err))
             .map_err(HandlerError::from)?;
 
@@ -63,14 +68,16 @@ mod tests {
 
         #[test]
         fn empty() {
+            let mut game_state = GameState::default();
             let mut manager = Manager::default();
 
-            assert!(manager.run_plugins().is_ok())
+            assert!(manager.run_plugins(&mut game_state).is_ok())
         }
 
         #[test]
         fn multiple() {
             use crate::plugin::wasm::plugin::tests::WAT_VALID;
+            let mut game_state = GameState::default();
             let mut manager = Manager::default();
 
             let p = plugin(WAT_VALID);
@@ -79,12 +86,13 @@ mod tests {
             let p = plugin(WAT_VALID);
             manager.plugins.push(p);
 
-            assert!(manager.run_plugins().is_ok())
+            assert!(manager.run_plugins(&mut game_state).is_ok())
         }
 
         #[test]
         fn with_failure() {
             use crate::plugin::wasm::plugin::tests::{WAT_MISSING_FUNC, WAT_VALID};
+            let mut game_state = GameState::default();
             let mut manager = Manager::default();
 
             let p = plugin(WAT_VALID);
@@ -93,7 +101,7 @@ mod tests {
             let p = plugin(WAT_MISSING_FUNC);
             manager.plugins.push(p);
 
-            let err = anyhow::Error::new(manager.run_plugins().unwrap_err());
+            let err = anyhow::Error::new(manager.run_plugins(&mut game_state).unwrap_err());
 
             assert_eq!(
                 format!("{:?}", err),
@@ -112,15 +120,19 @@ mod tests {
         fn valid() {
             use crate::plugin::wasm::plugin::tests::WAT_VALID;
             let (_guard, path) = wasm(WAT_VALID);
+            let mut game_state = GameState::default();
 
-            assert!(Manager::default().register_plugin(&path).is_ok())
+            assert!(Manager::default()
+                .register_plugin(&mut game_state, &path)
+                .is_ok())
         }
 
         #[test]
         fn invalid_wasm() {
             let (_guard, path) = wasm(r#"INVALID"#);
+            let mut game_state = GameState::default();
 
-            let result = Manager::default().register_plugin(&path);
+            let result = Manager::default().register_plugin(&mut game_state, &path);
             let err = anyhow::Error::new(result.unwrap_err());
 
             assert_eq!(
@@ -144,8 +156,9 @@ mod tests {
         #[test]
         fn missing_file() {
             let path = "/missing/file";
+            let mut game_state = GameState::default();
 
-            let result = Manager::default().register_plugin(Path::new(path));
+            let result = Manager::default().register_plugin(&mut game_state, Path::new(path));
             let err = anyhow::Error::new(result.unwrap_err());
 
             assert_eq!(
@@ -172,7 +185,8 @@ mod tests {
     }
 
     fn plugin(wasm: &str) -> Plugin {
+        let mut game_state = GameState::default();
         let store = Store::default();
-        Plugin::new(&store, wasm).unwrap()
+        Plugin::new(&store, &mut game_state, wasm).unwrap()
     }
 }

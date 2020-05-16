@@ -1,6 +1,7 @@
 use super::plugin::Plugin;
 use crate::error;
 use crate::plugin::{Handler, Runtime};
+use common::GameState;
 use std::path::Path;
 
 /// A mock plugin implementation
@@ -10,15 +11,15 @@ pub struct Manager {
 }
 
 impl Handler for Manager {
-    fn run_plugins(&mut self) -> Result<(), error::Runtime> {
+    fn run_plugins(&mut self, game_state: &mut GameState) -> Result<(), error::Runtime> {
         for plugin in &mut self.plugins {
-            plugin.run()?;
+            plugin.run(game_state)?;
         }
 
         Ok(())
     }
 
-    fn register_plugin(&mut self, _: &Path) -> Result<(), error::Handler> {
+    fn register_plugin(&mut self, _: &mut GameState, _: &Path) -> Result<(), error::Handler> {
         let plugin = Plugin::default();
         self.plugins.push(plugin);
 
@@ -39,11 +40,12 @@ mod tests {
 
         #[test]
         fn works() {
+            let mut game_state = GameState::default();
             let mut manager = Manager::default();
             let plugin = Plugin::default();
             manager.plugins.push(plugin);
 
-            assert!(manager.run_plugins().is_ok())
+            assert!(manager.run_plugins(&mut game_state).is_ok())
         }
     }
 
@@ -52,9 +54,10 @@ mod tests {
 
         #[test]
         fn works() {
+            let mut state = GameState::default();
             let mut manager = Manager::default();
-            manager.register_plugin(Path::new("")).unwrap();
-            manager.register_plugin(Path::new("")).unwrap();
+            manager.register_plugin(&mut state, Path::new("")).unwrap();
+            manager.register_plugin(&mut state, Path::new("")).unwrap();
 
             assert_eq!(manager.plugins.len(), 2)
         }

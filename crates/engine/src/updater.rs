@@ -1,4 +1,5 @@
-use crate::{config, error, plugin::Handler, GameState};
+use crate::{config, error, plugin::Handler};
+use common::GameState;
 use std::time::Instant;
 
 // We'll define the `Nanoseconds` alias to make it easier to reason about
@@ -129,10 +130,7 @@ impl Updater {
         state: &mut GameState,
         plugin_handler: &mut dyn Handler,
     ) -> Result<(), error::Updater> {
-        plugin_handler.run_plugins()?;
-        state.pos_x = state.pos_x % 800.0 + 1.0;
-
-        Ok(())
+        plugin_handler.run_plugins(state).map_err(Into::into)
     }
 }
 
@@ -159,14 +157,13 @@ mod tests {
     #[test]
     fn update_game_state() {
         let mut state = GameState::default();
-        let mut updater: Updater = config::Updater::default().into();
+        let updater: Updater = config::Updater::default().into();
         let mut handler = crate::plugin::mock::Manager::default();
-        handler.register_plugin(Path::new("")).unwrap();
+        handler.register_plugin(&mut state, Path::new("")).unwrap();
 
         updater.update_game_state(&mut state, &mut handler).unwrap();
         updater.update_game_state(&mut state, &mut handler).unwrap();
 
         assert_eq!(handler.as_mock().unwrap().plugins[0].runs, 2);
-        assert_eq!(state.pos_x, 2.0 as f32);
     }
 }

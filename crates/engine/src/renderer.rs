@@ -1,4 +1,5 @@
-use crate::{config, GameState};
+use crate::config;
+use common::{GameState, Value};
 use ggez::{graphics, nalgebra, Context, GameResult};
 use std::time::Instant;
 
@@ -42,10 +43,16 @@ impl Renderer {
     fn render_game_state(&self, ctx: &mut Context, state: &GameState) -> GameResult<()> {
         graphics::clear(ctx, [0.1, 0.2, 0.3, 1.0].into());
 
+        #[allow(clippy::cast_possible_truncation)]
+        let pos_x = state
+            .get("test", "pos_x")
+            .and_then(Value::as_f64)
+            .unwrap_or(0.0) as f32;
+
         let circle = graphics::Mesh::new_circle(
             ctx,
             graphics::DrawMode::fill(),
-            nalgebra::Point2::new(state.pos_x, 380.0),
+            nalgebra::Point2::new(pos_x, 380.0),
             100.0,
             2.0,
             graphics::WHITE,

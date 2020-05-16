@@ -1,5 +1,6 @@
-use crate::Registration;
 use anyhow::Result;
+use common::{Registration, RunResult, State};
+use core::mem::ManuallyDrop;
 
 /// An internal function called by the `load!()` macro.
 ///
@@ -26,17 +27,29 @@ pub fn init(registration: Registration) {
 /// The `result` attribute contains any errors the plugin generated while
 /// running.
 #[inline(always)]
-pub fn run(result: Result<()>) {
-    if let Err(err) = result {
-        let data = match serde_json::to_vec(&format!("{:#}", err)) {
-            Ok(vec) => vec,
-            Err(err) => format!("{:#}", err).into_bytes(),
-        };
+pub fn run(state: State, result: Result<()>) {
+    let error = result.err().map(|err| format!("{:#}", err));
 
-        let mut slice = data.into_boxed_slice();
+    // TODO: temporary disabled `maybe` impl, as we would write `None` to the
+    // host, which would overwrite `Some`, we need to keep the `Some` if `None`
+    // is given...
+    // let state = state.maybe();
 
-        unsafe { ffi::run_callback(slice.as_mut_ptr() as i32, slice.len() as i32) };
-    }
+    let run = RunResult { error, state };
+    let data = match serde_json::to_vec(&run) {
+        Ok(vec) => vec,
+        Err(err) => format!(r#"{{"error":"{:#}"}}"#, err).into_bytes(),
+    };
+
+    let mut slice = data.into_boxed_slice();
+    unsafe { ffi::run_callback(slice.as_mut_ptr() as i32, slice.len() as i32) };
+}
+
+/// Allocate memory on the guest.
+#[inline(always)]
+pub fn malloc(len: i32) -> i32 {
+    let vec = Vec::<u8>::with_capacity(len as usize);
+    ManuallyDrop::new(vec).as_mut_ptr() as i32
 }
 
 pub mod ffi {

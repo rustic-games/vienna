@@ -1,4 +1,5 @@
-use crate::{config, error, plugin::Handler, Builder, Error, GameState, Renderer, Updater};
+use crate::{config, error, plugin::Handler, Builder, Error, Renderer, Updater};
+use common::GameState;
 use ggez::{event::EventHandler, Context, GameResult};
 use std::path::Path;
 
@@ -80,7 +81,9 @@ impl EventHandler for Engine {
 
                 // any other errors can't be propagated in a nice way, so we'll
                 // make due with what we have.
-                error::Updater::PluginRuntime(err) => ggez::GameError::RenderError(err.to_string()),
+                error::Updater::PluginRuntime(err) => {
+                    ggez::GameError::RenderError(format!("{:#}", anyhow::Error::new(err)))
+                }
             })
     }
 

@@ -4,6 +4,10 @@ use thiserror::Error;
 /// produce.
 #[derive(Debug, Error)]
 pub enum Error {
+    /// codec error
+    #[error("codec error")]
+    Codec(#[from] serde_json::Error),
+
     /// run error
     #[error(transparent)]
     Run(#[from] anyhow::Error),
