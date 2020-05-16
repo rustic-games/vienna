@@ -1,7 +1,9 @@
 use super::RuntimeError;
 use crate::error;
 use crate::plugin::{Func, Runtime};
-use common::{serde_json, DeserializeOwned, GameState, Registration, RunResult, StateTransfer};
+use common::{
+    serde_json, DeserializeOwned, Event, GameState, Registration, RunResult, StateTransfer,
+};
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::convert::TryInto;
@@ -167,7 +169,7 @@ impl Runtime for Plugin {
     ///
     /// This requires the Wasm module to expose a `_run` function that takes two
     /// i32 arguments and returns no values.
-    fn run(&mut self, game_state: &mut GameState) -> Result<(), error::Runtime> {
+    fn run(&mut self, game_state: &mut GameState, events: &[Event]) -> Result<(), error::Runtime> {
         let owned = game_state.get(self.name()).cloned().unwrap_or_default();
 
         let mut borrowed = HashMap::default();
@@ -179,7 +181,11 @@ impl Runtime for Plugin {
             }
         }
 
-        let state = StateTransfer { owned, borrowed };
+        let state = StateTransfer {
+            owned,
+            borrowed,
+            events: events.to_vec(),
+        };
         let vec = serde_json::to_vec(&state).map_err(RuntimeError::from)?;
         let vec_size: i32 = vec.len().try_into().map_err(RuntimeError::from)?;
 
@@ -268,7 +274,7 @@ pub(super) mod tests {
 
             assert!(plugin(WAT_VALID)
                 .expect("valid plugin")
-                .run(&mut game_state)
+                .run(&mut game_state, &[])
                 .is_ok())
         }
 
@@ -277,7 +283,7 @@ pub(super) mod tests {
             let mut game_state = GameState::default();
             let result = plugin(WAT_MISSING_FUNC)
                 .expect("valid plugin")
-                .run(&mut game_state);
+                .run(&mut game_state, &[]);
             let err = anyhow::Error::new(result.unwrap_err());
 
             assert_eq!(
@@ -294,7 +300,7 @@ pub(super) mod tests {
             let mut game_state = GameState::default();
             let result = plugin(WAT_INVALID_FUNC_SIGNATURE)
                 .expect("valid plugin")
-                .run(&mut game_state);
+                .run(&mut game_state, &[]);
             let err = anyhow::Error::new(result.unwrap_err());
 
             assert_eq!(

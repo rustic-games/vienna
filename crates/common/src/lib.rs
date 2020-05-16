@@ -1,7 +1,9 @@
+mod event;
 mod registration;
 mod run_result;
 mod state;
 
+pub use event::{Event, Key};
 pub use registration::Registration;
 pub use run_result::RunResult;
 pub use state::{GameState, PluginState, StateTransfer};

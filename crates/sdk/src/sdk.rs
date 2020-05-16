@@ -1,4 +1,4 @@
-use common::{PluginState, StateTransfer, Value};
+use common::{Event, PluginState, StateTransfer, Value};
 use std::collections::HashMap;
 
 pub struct Sdk {
@@ -10,6 +10,9 @@ pub struct Sdk {
     /// This data can only be read, not mutated.
     borrowed_state: HashMap<String, PluginState>,
 
+    /// A list of events that got triggered since the last update.
+    events: Vec<Event>,
+
     /// A flag indicating if the `owned_state` has been modified.
     pub state_updated: bool,
 }
@@ -19,11 +22,13 @@ impl<'a> Sdk {
         let StateTransfer {
             owned: owned_state,
             borrowed: borrowed_state,
+            events,
         } = state;
 
         Self {
             owned_state,
             borrowed_state,
+            events,
             state_updated: false,
         }
     }
@@ -43,5 +48,10 @@ impl<'a> Sdk {
     /// Get a immutable reference to the value of another plugin.
     pub fn plugin(&self, name: impl Into<String>) -> Option<&PluginState> {
         self.borrowed_state.get(&name.into())
+    }
+
+    /// Get a list of events since the last update.
+    pub fn events(&self) -> &[Event] {
+        &self.events
     }
 }

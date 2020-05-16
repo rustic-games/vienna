@@ -50,10 +50,17 @@ impl Renderer {
             .and_then(Value::as_f64)
             .unwrap_or(0.0) as f32;
 
+        #[allow(clippy::cast_possible_truncation)]
+        let pos_y = state
+            .get("test")
+            .and_then(|p| p.get("pos_y"))
+            .and_then(Value::as_f64)
+            .unwrap_or(0.0) as f32;
+
         let circle = graphics::Mesh::new_circle(
             ctx,
             graphics::DrawMode::fill(),
-            nalgebra::Point2::new(pos_x, 380.0),
+            nalgebra::Point2::new(pos_x, pos_y),
             100.0,
             2.0,
             graphics::WHITE,

@@ -1,4 +1,4 @@
-use crate::{Deserialize, Serialize, Value};
+use crate::{Deserialize, Event, Serialize, Value};
 use std::collections::HashMap;
 
 /// The state of the game.
@@ -69,6 +69,8 @@ pub struct StateTransfer {
     pub owned: PluginState,
     #[serde(rename = "b")]
     pub borrowed: HashMap<String, PluginState>,
+    #[serde(rename = "e")]
+    pub events: Vec<Event>,
 }
 
 impl StateTransfer {

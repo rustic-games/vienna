@@ -17,6 +17,8 @@ macro_rules! load {
         pub extern "C" fn _run(ptr: i32, len: i32) {
             let state = unsafe { StateTransfer::from_raw(ptr as *mut u8, len as usize) };
             let mut sdk = $crate::Sdk::new(state);
+
+            // Explicit type to improve compiler error for plugin authors.
             let result: Result<()> = run(&mut sdk);
 
             $crate::run(sdk, result);

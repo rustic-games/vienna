@@ -2,7 +2,7 @@ pub(super) mod mock;
 pub(super) mod wasm;
 
 use crate::error;
-use common::GameState;
+use common::{Event, GameState};
 use core::fmt;
 use displaydoc::Display;
 use std::path::Path;
@@ -24,7 +24,7 @@ pub enum Func {
 /// usable by the engine.
 pub trait Runtime {
     /// Run the plugin to completion.
-    fn run(&mut self, game_state: &mut GameState) -> Result<(), error::Runtime>;
+    fn run(&mut self, game_state: &mut GameState, events: &[Event]) -> Result<(), error::Runtime>;
 
     /// The name of the plugin.
     fn name(&self) -> &str;
@@ -45,7 +45,11 @@ pub trait Runtime {
 /// A handler takes ownership of external plugins, and runs them when requested.
 pub trait Handler {
     /// Run all registered plugins.
-    fn run_plugins(&mut self, game_state: &mut GameState) -> Result<(), error::Runtime>;
+    fn run_plugins(
+        &mut self,
+        game_state: &mut GameState,
+        events: &[Event],
+    ) -> Result<(), error::Runtime>;
 
     /// Register a new plugin to handle.
     fn register_plugin(

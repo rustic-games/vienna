@@ -1,6 +1,12 @@
 use crate::{config, error, plugin::Handler, Builder, Error, Renderer, Updater};
-use common::GameState;
-use ggez::{event::EventHandler, Context, GameResult};
+use common::{Event, GameState, Key};
+use ggez::{
+    conf::{FullscreenType, ModuleConf, NumSamples, WindowMode, WindowSetup},
+    event::{self, EventHandler},
+    input::keyboard::{self, KeyCode},
+    Context, ContextBuilder, GameResult,
+};
+use std::collections::HashSet;
 use std::path::Path;
 
 #[derive(Debug)]
@@ -41,15 +47,25 @@ impl Engine {
     }
 
     pub fn run(mut self) -> Result<(), Error> {
-        use ggez::conf::{ModuleConf, NumSamples, WindowSetup};
-        use ggez::{event, ContextBuilder};
-
         let window_setup = WindowSetup {
             title: "Vienna: work in progress".to_owned(),
             samples: NumSamples::Zero,
             vsync: true,
             icon: "".to_owned(),
             srgb: true,
+        };
+
+        let window_mode = WindowMode {
+            width: 800.0,
+            height: 600.0,
+            maximized: false,
+            fullscreen_type: FullscreenType::Windowed,
+            borderless: false,
+            min_width: 0.0,
+            max_width: 0.0,
+            min_height: 0.0,
+            max_height: 0.0,
+            resizable: false,
         };
 
         let modules = ModuleConf {
@@ -59,6 +75,7 @@ impl Engine {
 
         let (mut ctx, mut event_loop) = ContextBuilder::new("Vienna", "")
             .window_setup(window_setup)
+            .window_mode(window_mode)
             .modules(modules)
             .with_conf_file(false)
             .add_resource_path(Path::new("./resources"))
@@ -70,11 +87,30 @@ impl Engine {
 }
 
 impl EventHandler for Engine {
-    fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
+    fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
+        let pressed_keys = keyboard::pressed_keys(ctx);
         let handler = self.plugin_handler.as_mut();
 
+        let mut keys = HashSet::new();
+        for pressed_key in pressed_keys {
+            let key = match pressed_key {
+                KeyCode::W => Key::W,
+                KeyCode::A => Key::A,
+                KeyCode::S => Key::S,
+                KeyCode::D => Key::D,
+                _ => todo!(),
+            };
+
+            keys.insert(key);
+        }
+
+        let mut events = vec![];
+        if !keys.is_empty() {
+            events.push(Event::Keyboard(keys));
+        }
+
         self.updater
-            .run(&mut self.game_state, handler)
+            .run(&mut self.game_state, &events, handler)
             .map_err(|err| match err {
                 // this is the only native error type supported by ggez
                 error::Updater::GameEngine(err) => err,

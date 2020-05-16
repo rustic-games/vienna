@@ -1,5 +1,5 @@
 use crate::{config, error, plugin::Handler};
-use common::GameState;
+use common::{Event, GameState};
 use std::time::Instant;
 
 // We'll define the `Nanoseconds` alias to make it easier to reason about
@@ -100,6 +100,7 @@ impl Updater {
     pub(super) fn run(
         &mut self,
         state: &mut GameState,
+        events: &[Event],
         plugin_handler: &mut dyn Handler,
     ) -> Result<(), error::Updater> {
         let last_step_duration = self.last_step_timestamp.elapsed();
@@ -110,7 +111,7 @@ impl Updater {
         // update a single game update. The required available time
         // depends on the configured updates per second.
         while self.accumulated_time >= self.update_interval {
-            self.update_game_state(state, plugin_handler)?;
+            self.update_game_state(state, events, plugin_handler)?;
 
             self.accumulated_time -= self.update_interval;
             self.total_time += self.update_interval;
@@ -128,9 +129,12 @@ impl Updater {
     fn update_game_state(
         &self,
         state: &mut GameState,
+        events: &[Event],
         plugin_handler: &mut dyn Handler,
     ) -> Result<(), error::Updater> {
-        plugin_handler.run_plugins(state).map_err(Into::into)
+        plugin_handler
+            .run_plugins(state, events)
+            .map_err(Into::into)
     }
 }
 
@@ -161,8 +165,12 @@ mod tests {
         let mut handler = crate::plugin::mock::Manager::default();
         handler.register_plugin(&mut state, Path::new("")).unwrap();
 
-        updater.update_game_state(&mut state, &mut handler).unwrap();
-        updater.update_game_state(&mut state, &mut handler).unwrap();
+        updater
+            .update_game_state(&mut state, &[], &mut handler)
+            .unwrap();
+        updater
+            .update_game_state(&mut state, &[], &mut handler)
+            .unwrap();
 
         assert_eq!(handler.as_mock().unwrap().plugins[0].runs, 2);
     }
