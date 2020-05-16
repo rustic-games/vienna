@@ -151,16 +151,19 @@ mod tests {
         fn with_game_state() {
             let mut game_state = GameState::default();
             let mut plugin_state = HashMap::default();
-            plugin_state.insert("bar".to_owned(), Value::Str("baz".to_owned()));
-            game_state.register_plugin_state("foo", plugin_state);
+            plugin_state.insert("bar".to_owned(), Value::String("baz".to_owned()));
+            game_state.register_plugin_state("foo", plugin_state.into());
 
             let builder = Builder::default();
             let builder = builder.with_game_state(game_state);
             let engine = builder.build().unwrap();
 
             assert_eq!(
-                engine.game_state.get("foo", "bar"),
-                Some(&Value::Str("baz".to_owned()))
+                engine
+                    .game_state
+                    .get("foo")
+                    .and_then(|plugin| plugin.get("bar")),
+                Some(&Value::String("baz".to_owned()))
             );
         }
     }

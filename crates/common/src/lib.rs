@@ -1,9 +1,11 @@
 mod registration;
 mod run_result;
 mod state;
-mod value;
 
 pub use registration::Registration;
 pub use run_result::RunResult;
-pub use state::{BorrowedState, GameState, OwnedState, ReadState, State, WriteState};
-pub use value::Value;
+pub use state::{GameState, PluginState, StateTransfer};
+
+// A list of third-party exposed types used by both the engine and SDK.
+pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
+pub use serde_json::{self, Value};

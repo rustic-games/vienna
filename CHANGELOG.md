@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog], and this project adheres to
 
 ## _[Unreleased]_
 
+- refactor: simplify plugin state transfer
 - feat: add persistent state to plugins
 - feat: add initial game loop and window
 - rfc: widgets

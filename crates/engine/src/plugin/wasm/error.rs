@@ -1,5 +1,6 @@
 use crate::plugin::Func;
 use anyhow::Error;
+use common::serde_json;
 use displaydoc::Display;
 use std::io;
 use std::path::PathBuf;

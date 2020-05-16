@@ -2537,8 +2537,6 @@ name = "vienna"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "serde",
- "serde_json",
  "thiserror",
  "vienna-common",
 ]
@@ -2558,8 +2556,6 @@ dependencies = [
  "anyhow",
  "displaydoc",
  "ggez",
- "serde",
- "serde_json",
  "tempfile",
  "thiserror",
  "vienna-common",

@@ -1,13 +1,13 @@
 use super::RuntimeError;
 use crate::error;
 use crate::plugin::{Func, Runtime};
-use common::{GameState, Registration, RunResult, State};
+use common::{serde_json, DeserializeOwned, GameState, Registration, RunResult, StateTransfer};
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::convert::TryInto;
-use std::fmt;
 use std::io::Write;
 use std::rc::Rc;
+use std::{fmt, mem};
 use wasmtime::{Caller, Extern, Func as F, Instance, Memory, Module, Store, Trap, WasmTy};
 
 /// A container type to wrap a Wasm module.
@@ -53,13 +53,16 @@ impl Plugin {
 
         Self::call(&instance, Func::Init)?;
 
-        let registration: Registration = registration.take().unwrap_or_default();
+        let mut registration: Registration = registration.take().expect("must exist");
 
         if registration.name.is_empty() {
             return Err(RuntimeError::MissingName);
         }
 
-        game_state.register_plugin_state(registration.name.clone(), registration.write.clone());
+        // Only register state plugin if anything needs to be tracked.
+        if let Some(state) = &mut registration.state {
+            game_state.register_plugin_state(registration.name.clone(), mem::take(state).into());
+        }
 
         Ok(Self {
             instance,
@@ -109,7 +112,7 @@ impl Plugin {
         Ok(value)
     }
 
-    fn callback<T: std::fmt::Debug + serde::de::DeserializeOwned + 'static>(
+    fn callback<T: std::fmt::Debug + DeserializeOwned + 'static>(
         store: &Store,
         ptr: Rc<Cell<Option<T>>>,
     ) -> Extern {
@@ -165,24 +168,18 @@ impl Runtime for Plugin {
     /// This requires the Wasm module to expose a `_run` function that takes two
     /// i32 arguments and returns no values.
     fn run(&mut self, game_state: &mut GameState) -> Result<(), error::Runtime> {
+        let owned = game_state.get(self.name()).cloned().unwrap_or_default();
+
         let mut borrowed = HashMap::default();
-        for (plugin, keys) in self.registration.read.clone() {
-            match game_state.borrowed_state(plugin.clone(), &keys) {
-                None => {}
-                Some(state) => {
-                    borrowed.insert(plugin, state);
+        if let Some(ref dependencies) = &self.registration.dependencies {
+            for plugin in dependencies {
+                if let Some(state) = game_state.get(plugin) {
+                    borrowed.insert(plugin.clone(), state.clone());
                 }
             }
         }
 
-        // Take the state owned by the plugin. If the plugin has requested no
-        // state to maintain, a default empty one is created instead.
-        let owned = game_state
-            .owned_state(self.name())
-            .cloned()
-            .unwrap_or_default();
-
-        let state = State::new(owned, borrowed);
+        let state = StateTransfer { owned, borrowed };
         let vec = serde_json::to_vec(&state).map_err(RuntimeError::from)?;
         let vec_size: i32 = vec.len().try_into().map_err(RuntimeError::from)?;
 
@@ -199,7 +196,7 @@ impl Runtime for Plugin {
 
         Self::call2(&self.instance, Func::Run, offset, vec_size)?;
 
-        let mut run = match self.run_result.take() {
+        let run = match self.run_result.take() {
             Some(run) => run,
             None => {
                 // TODO: logging
@@ -211,8 +208,12 @@ impl Runtime for Plugin {
             return Err(RuntimeError::Plugin(err).into());
         }
 
-        let (state, _) = std::mem::take(&mut run.state).into_parts();
-        game_state.replace_plugin_state(self.name(), state);
+        // If `state` is `None`, it means no state was changed by the plugin, so
+        // the game state doesn't have to be updated.
+        if let Some(mut state) = run.state {
+            let StateTransfer { owned, .. } = mem::take(&mut state);
+            game_state.register_plugin_state(self.name(), owned);
+        }
 
         Ok(())
     }
@@ -323,12 +324,12 @@ pub(super) mod tests {
         (import "" "run_callback" (func (param i32 i32)))
         (func (export "_init")
             i32.const 1048576
-            i32.const 36
+            i32.const 12
             call $init_callback)
         (func (export "_run") (param i32 i32))
         (func (export "_malloc") (param i32) (result i32)
             i32.const 0)
-        (data (;0;) (i32.const 1048576) "{\22name\22:\22test\22,\22write\22:{},\22read\22:{}}")
+        (data (;0;) (i32.const 1048576) "{\22n\22:\22test\22}")
         (memory (;0;) 17)
         (export "memory" (memory 0)))
     "#;
@@ -339,11 +340,11 @@ pub(super) mod tests {
         (import "" "run_callback" (func (param i32 i32)))
         (func (export "_init")
             i32.const 1048576
-            i32.const 36
+            i32.const 12
             call $init_callback)
         (func (export "_malloc") (param i32) (result i32)
             i32.const 0)
-        (data (;0;) (i32.const 1048576) "{\22name\22:\22test\22,\22write\22:{},\22read\22:{}}")
+        (data (;0;) (i32.const 1048576) "{\22n\22:\22test\22}")
         (memory (;0;) 17)
         (export "memory" (memory 0)))
     "#;
@@ -354,13 +355,13 @@ pub(super) mod tests {
         (import "" "run_callback" (func (param i32 i32)))
         (func (export "_init")
             i32.const 1048576
-            i32.const 36
+            i32.const 12
             call $init_callback)
         (func (export "_run") (param i32 i32) (result i32)
             i32.const 42)
         (func (export "_malloc") (param i32) (result i32)
             i32.const 0)
-        (data (;0;) (i32.const 1048576) "{\22name\22:\22test\22,\22write\22:{},\22read\22:{}}")
+        (data (;0;) (i32.const 1048576) "{\22n\22:\22test\22}")
         (memory (;0;) 17)
         (export "memory" (memory 0)))
     "#;

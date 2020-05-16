@@ -1,5 +1,5 @@
-const REGISTRATION: &str = r#"{"name":"minimal","write":{},"read":{}}"#;
-const RUN_RESULT: &str = r#"{"error":null,"state":{"owned":{"data":{}},"borrowed":{}}}"#;
+const REGISTRATION: &str = r#"{"n":"minimal"}"#;
+const RUN_RESULT: &str = r#"{}"#;
 
 #[no_mangle]
 pub extern "C" fn _init() {

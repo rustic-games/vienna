@@ -45,7 +45,8 @@ impl Renderer {
 
         #[allow(clippy::cast_possible_truncation)]
         let pos_x = state
-            .get("test", "pos_x")
+            .get("test")
+            .and_then(|p| p.get("pos_x"))
             .and_then(Value::as_f64)
             .unwrap_or(0.0) as f32;
 

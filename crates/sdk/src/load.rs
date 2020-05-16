@@ -15,10 +15,11 @@ macro_rules! load {
         #[no_mangle]
         /// Run the plugin on every game update.
         pub extern "C" fn _run(ptr: i32, len: i32) {
-            let mut state = unsafe { State::from_raw(ptr as *mut u8, len as usize) };
-            let result: Result<()> = run(&mut state);
+            let state = unsafe { StateTransfer::from_raw(ptr as *mut u8, len as usize) };
+            let mut sdk = $crate::Sdk::new(state);
+            let result: Result<()> = run(&mut sdk);
 
-            $crate::run(state, result);
+            $crate::run(sdk, result);
         }
 
         #[no_mangle]

@@ -1,6 +1,7 @@
+use crate::Sdk;
 use anyhow::Result;
-use common::{Registration, RunResult, State};
-use core::mem::ManuallyDrop;
+use common::{serde_json, Registration, RunResult, StateTransfer};
+use core::mem;
 
 /// An internal function called by the `load!()` macro.
 ///
@@ -27,13 +28,16 @@ pub fn init(registration: Registration) {
 /// The `result` attribute contains any errors the plugin generated while
 /// running.
 #[inline(always)]
-pub fn run(state: State, result: Result<()>) {
+pub fn run(mut sdk: Sdk, result: Result<()>) {
     let error = result.err().map(|err| format!("{:#}", err));
 
-    // TODO: temporary disabled `maybe` impl, as we would write `None` to the
-    // host, which would overwrite `Some`, we need to keep the `Some` if `None`
-    // is given...
-    // let state = state.maybe();
+    // Populate the run result with the updated state, if any.
+    let mut state = None;
+    if sdk.state_updated {
+        let mut state_transfer = StateTransfer::default();
+        state_transfer.owned = mem::take(&mut sdk.owned_state);
+        state = Some(state_transfer)
+    }
 
     let run = RunResult { error, state };
     let data = match serde_json::to_vec(&run) {
@@ -49,7 +53,7 @@ pub fn run(state: State, result: Result<()>) {
 #[inline(always)]
 pub fn malloc(len: i32) -> i32 {
     let vec = Vec::<u8>::with_capacity(len as usize);
-    ManuallyDrop::new(vec).as_mut_ptr() as i32
+    mem::ManuallyDrop::new(vec).as_mut_ptr() as i32
 }
 
 pub mod ffi {

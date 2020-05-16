@@ -1,4 +1,4 @@
-use crate::State;
+use crate::StateTransfer;
 use serde::{Deserialize, Serialize};
 
 /// All details of the result of a `run` of the plugin.
@@ -7,8 +7,10 @@ pub struct RunResult {
     /// Details about the error occurred while running the plugin.
     ///
     /// This returns `None` if no error occurred.
+    #[serde(rename = "e")]
     pub error: Option<String>,
 
     /// The game state after the plugin finished running.
-    pub state: State,
+    #[serde(rename = "s")]
+    pub state: Option<StateTransfer>,
 }

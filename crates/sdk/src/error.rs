@@ -1,3 +1,4 @@
+use common::serde_json;
 use thiserror::Error;
 
 /// Top-level error object exposing all possible error variants this crate can
