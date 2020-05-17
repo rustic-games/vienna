@@ -5,6 +5,7 @@ mod builder;
 mod config;
 mod engine;
 mod error;
+mod ggez;
 mod plugin;
 mod renderer;
 mod updater;
