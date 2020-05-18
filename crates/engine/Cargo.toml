@@ -11,14 +11,25 @@ license = "Proprietary"
 edition = "2018"
 publish = false
 
+[features]
+default = ["core-ggez"]
+core-ggez = ["ggez"]
+core-coffee = ["coffee", "once_cell"]
+
 [dependencies]
 anyhow = "1.0"
 common = { package = "vienna-common", path = "../common" }
 displaydoc = "0.1"
-ggez = { version = "0.5", default-features = false }
+ggez = { version = "0.5", default-features = false, optional = true }
+once_cell = { version = "1.4.0", optional = true }
 thiserror = "1.0"
 walkdir = "2.3"
 wasmtime = { version = "0.16", default-features = false }
+
+# - https://github.com/hecrj/coffee/pull/128
+# - https://github.com/hecrj/coffee/pull/129
+# - https://github.com/hecrj/coffee/pull/130
+coffee = { git = "https://github.com/rustic-games/coffee", rev = "merged", features = ["opengl", "debug"], optional = true }
 
 [dev-dependencies]
 tempfile = "3.1"

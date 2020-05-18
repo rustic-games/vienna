@@ -3,25 +3,16 @@ use common::{GameState, Value};
 use ggez::{graphics, nalgebra, Context, GameResult};
 use std::time::Instant;
 
-// We'll define the `Nanoseconds` alias to make it easier to reason about
-// numbers representing a timestamp.
-type Nanoseconds = u64;
-
-// This is a convenience constant, to make the rest of the code a bit easier to
-// parse.
-#[allow(non_upper_case_globals)]
-const nanoseconds_per_second: u64 = 1_000_000_000;
-
 #[derive(Debug)]
-pub(super) struct Renderer {
-    pub config: config::Renderer,
+pub struct Renderer {
+    pub(crate) config: config::Renderer,
     last_step_timestamp: Instant,
-    minimum_nanoseconds_between_renders: Nanoseconds,
+    minimum_nanoseconds_between_renders: u64,
 }
 
 impl Renderer {
     /// Render the state of the game to the screen.
-    pub(super) fn run(
+    pub fn run(
         &mut self,
         ctx: &mut Context,
         state: &GameState,
@@ -36,11 +27,10 @@ impl Renderer {
         // decisions.
         self.last_step_timestamp = Instant::now();
 
-        self.render_game_state(ctx, state)
+        Self::render_game_state(ctx, state)
     }
 
-    #[allow(clippy::unused_self)]
-    fn render_game_state(&self, ctx: &mut Context, state: &GameState) -> GameResult<()> {
+    fn render_game_state(ctx: &mut Context, state: &GameState) -> GameResult<()> {
         graphics::clear(ctx, [0.1, 0.2, 0.3, 1.0].into());
 
         #[allow(clippy::cast_possible_truncation)]
@@ -88,7 +78,7 @@ impl Renderer {
 impl From<config::Renderer> for Renderer {
     fn from(config: config::Renderer) -> Self {
         let minimum_nanoseconds_between_renders = match config.max_frames_per_second {
-            Some(fps) => nanoseconds_per_second / fps,
+            Some(fps) => 1_000_000_000 / fps,
             None => 0,
         };
 

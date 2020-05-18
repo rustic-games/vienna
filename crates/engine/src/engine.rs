@@ -1,4 +1,9 @@
-use crate::{config, plugin::Handler, Builder, Error, Renderer, Updater};
+use crate::{
+    config,
+    core::{Renderer, Updater},
+    plugin::Handler,
+    Builder, Error,
+};
 use common::GameState;
 
 #[derive(Debug)]
@@ -39,6 +44,6 @@ impl Engine {
     }
 
     pub fn run(self) -> Result<(), Error> {
-        crate::ggez::run(self)
+        crate::core::run(self)
     }
 }

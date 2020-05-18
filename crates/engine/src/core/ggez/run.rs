@@ -14,8 +14,7 @@ use ggez::{
     input::keyboard::{self, KeyCode},
     Context, ContextBuilder, GameResult,
 };
-use std::collections::HashSet;
-use std::path::Path;
+use std::{collections::HashSet, path::Path};
 
 pub fn run(mut engine: Engine) -> Result<(), Error> {
     let window_setup = WindowSetup {
@@ -58,17 +57,16 @@ pub fn run(mut engine: Engine) -> Result<(), Error> {
 
 impl EventHandler for Engine {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
-        let pressed_keys = keyboard::pressed_keys(ctx);
-        let handler = self.plugin_handler.as_mut();
-
         let mut keys = HashSet::new();
-        for pressed_key in pressed_keys {
+        for pressed_key in keyboard::pressed_keys(ctx) {
             let key = match pressed_key {
                 KeyCode::W => Key::W,
                 KeyCode::A => Key::A,
                 KeyCode::S => Key::S,
                 KeyCode::D => Key::D,
-                _ => todo!(),
+
+                // All other keys are ignored for now.
+                _ => return Ok(()),
             };
 
             keys.insert(key);
@@ -79,6 +77,7 @@ impl EventHandler for Engine {
             events.push(Event::Keyboard(keys));
         }
 
+        let handler = self.plugin_handler.as_mut();
         self.updater
             .run(&mut self.game_state, &events, handler)
             .map_err(|err| match err {
@@ -96,6 +95,8 @@ impl EventHandler for Engine {
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         let progress = self.updater.step_progress;
 
+        // TODO: For now the renderer is not engine-agnostic, but will be once
+        //       plugins are in charge of drawing to the screen.
         self.renderer.run(ctx, &self.game_state, progress)
     }
 }

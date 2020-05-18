@@ -2,7 +2,7 @@ use crate::{Deserialize, Serialize};
 use std::collections::HashSet;
 
 /// A list of keyboard keys supported by the engine.
-#[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Key {
     W,
     A,

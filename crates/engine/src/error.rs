@@ -1,5 +1,6 @@
 use crate::plugin::wasm;
 use displaydoc::Display;
+#[cfg(feature = "core-ggez")]
 use ggez::error::GameError;
 use std::io;
 use thiserror::Error;
@@ -15,6 +16,7 @@ pub enum Error {
     PluginHandler(#[from] Handler),
 
     /// game error
+    #[cfg(feature = "core-ggez")]
     Game(#[from] GameError),
 }
 
@@ -76,5 +78,6 @@ pub enum Updater {
     PluginRuntime(#[from] Runtime),
 
     /// game engine error
+    #[cfg(feature = "core-ggez")]
     GameEngine(#[from] GameError),
 }

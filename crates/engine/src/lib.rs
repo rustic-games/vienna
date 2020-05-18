@@ -5,14 +5,21 @@ mod builder;
 mod config;
 mod engine;
 mod error;
-mod ggez;
 mod plugin;
-mod renderer;
-mod updater;
+
+#[cfg(all(feature = "core-coffee", not(feature = "core-ggez")))]
+mod core {
+    mod coffee;
+    pub use self::coffee::*;
+}
+
+#[cfg(all(feature = "core-ggez", not(feature = "core-coffee")))]
+mod core {
+    mod ggez;
+    pub use self::ggez::*;
+}
 
 use builder::Builder;
-use renderer::Renderer;
-use updater::Updater;
 
 pub use error::Error;
 

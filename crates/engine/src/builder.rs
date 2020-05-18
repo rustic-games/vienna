@@ -39,7 +39,37 @@ impl<'a> Builder<'a> {
     /// # Errors
     ///
     /// Returns an error if anything is misconfigured.
+    #[cfg(all(feature = "core-ggez", not(feature = "core-coffee")))]
     pub fn build(self) -> Result<Engine> {
+        self.build_inner()
+    }
+
+    // FIXME: this is a temporary solution until a better one is found.
+    //
+    // Since `coffee` must initialize the `Engine` by itself, we have to somehow
+    // provide it with the configuration set in this builder.
+    //
+    // For now, this is done through a mutable static variable that is set once
+    // in the builder, and then consumed when starting the engine.
+    //
+    // Ideally the builder:
+    //
+    // 1. Is engine agnostic and doesn't need any conditional compilation.
+    // 2. Does not need unsafe code and a global mutable variable to function.
+    #[cfg(all(feature = "core-coffee", not(feature = "core-ggez")))]
+    pub fn build(self) -> Result<Engine> {
+        use crate::core::{Config, CONFIG};
+
+        let plugin_paths = self.plugin_paths.into_iter().map(str::to_owned).collect();
+        let game_state = self.game_state;
+
+        let config = Config::new(plugin_paths, game_state);
+
+        unsafe { CONFIG.set(config).unwrap() };
+        Ok(Engine::default())
+    }
+
+    pub(super) fn build_inner(self) -> Result<Engine> {
         let mut game_state = self.game_state.unwrap_or_default();
         let mut plugin_handler = Box::new(wasm::Manager::default());
 
@@ -143,7 +173,7 @@ mod tests {
 
             assert_eq!(
                 err.to_string(),
-                format!("inaccessible plugin `foo` (NotFound)")
+                "inaccessible plugin `foo` (NotFound)".to_owned(),
             )
         }
 
