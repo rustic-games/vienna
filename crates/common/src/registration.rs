@@ -16,7 +16,7 @@ pub struct Registration {
 
 impl Registration {
     pub fn new(name: impl Into<String>) -> Self {
-        Registration {
+        Self {
             name: name.into(),
             ..Self::default()
         }

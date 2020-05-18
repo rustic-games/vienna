@@ -11,23 +11,23 @@ use std::collections::HashMap;
 /// owns its `PluginState`) or an immutable (for plugins that want to read the
 /// state of other plugins) reference to the relevant state objects.
 #[derive(Debug, Default)]
-pub struct GameState {
-    state: HashMap<String, PluginState>,
+pub struct Game {
+    state: HashMap<String, Plugin>,
 }
 
-impl GameState {
+impl Game {
     /// Register the state of a plugin.
-    pub fn register_plugin_state(&mut self, plugin: impl Into<String>, state: PluginState) {
+    pub fn register_plugin_state(&mut self, plugin: impl Into<String>, state: Plugin) {
         self.state.insert(plugin.into(), state);
     }
 
     /// Get an immutable reference to the state of a plugin.
-    pub fn get(&self, plugin: impl Into<String>) -> Option<&PluginState> {
+    pub fn get(&self, plugin: impl Into<String>) -> Option<&Plugin> {
         self.state.get(&plugin.into())
     }
 
     /// Get a mutable reference to the state of a plugin.
-    pub fn get_mut(&mut self, plugin: impl Into<String>) -> Option<&mut PluginState> {
+    pub fn get_mut(&mut self, plugin: impl Into<String>) -> Option<&mut Plugin> {
         self.state.get_mut(&plugin.into())
     }
 }
@@ -35,12 +35,12 @@ impl GameState {
 /// The state of a plugin.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct PluginState {
+pub struct Plugin {
     #[serde(rename = "s")]
     state: HashMap<String, Value>,
 }
 
-impl PluginState {
+impl Plugin {
     /// Get an immutable reference to a value.
     pub fn get(&self, key: impl Into<String>) -> Option<&Value> {
         self.state.get(&key.into())
@@ -52,7 +52,7 @@ impl PluginState {
     }
 }
 
-impl From<HashMap<String, Value>> for PluginState {
+impl From<HashMap<String, Value>> for Plugin {
     fn from(state: HashMap<String, Value>) -> Self {
         Self { state }
     }
@@ -64,17 +64,17 @@ impl From<HashMap<String, Value>> for PluginState {
 /// This object owns the plugin states it encapsulates so that they can be
 /// serialized and deserialized when moving across FFI boundaries.
 #[derive(Debug, Default, Serialize, Deserialize)]
-pub struct StateTransfer {
+pub struct Transfer {
     #[serde(rename = "o")]
-    pub owned: PluginState,
+    pub owned: Plugin,
     #[serde(rename = "b")]
-    pub borrowed: HashMap<String, PluginState>,
+    pub borrowed: HashMap<String, Plugin>,
     #[serde(rename = "e")]
     pub events: Vec<Event>,
 }
 
-impl StateTransfer {
-    /// Build a new [`StateTransfer`] object from a pointer and length to a JSON
+impl Transfer {
+    /// Build a new [`Transfer`] object from a pointer and length to a JSON
     /// encoded vector of bytes.
     ///
     /// # Safety

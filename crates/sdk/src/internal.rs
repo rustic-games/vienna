@@ -2,6 +2,7 @@ use crate::Sdk;
 use anyhow::Result;
 use common::{serde_json, Registration, RunResult, StateTransfer};
 use core::mem;
+use std::convert::TryInto;
 
 /// An internal function called by the `load!()` macro.
 ///
@@ -9,16 +10,20 @@ use core::mem;
 ///
 /// The `registration` attribute contains the details set by the plugin to be
 /// used by the engine to validate the plugin registration.
-#[inline(always)]
-pub fn init(registration: Registration) {
-    let data = match serde_json::to_vec(&registration) {
+#[inline]
+pub fn init(registration: &Registration) {
+    let data = match serde_json::to_vec(registration) {
         Ok(vec) => vec,
         Err(_) => return,
     };
 
     let mut slice = data.into_boxed_slice();
+    let len = slice
+        .len()
+        .try_into()
+        .expect("registration struct too large");
 
-    unsafe { ffi::init_callback(slice.as_mut_ptr() as i32, slice.len() as i32) };
+    unsafe { ffi::init_callback(slice.as_mut_ptr() as i32, len) };
 }
 
 /// An internal function called by the `load!()` macro.
@@ -27,7 +32,7 @@ pub fn init(registration: Registration) {
 ///
 /// The `result` attribute contains any errors the plugin generated while
 /// running.
-#[inline(always)]
+#[inline]
 pub fn run(mut sdk: Sdk, result: Result<()>) {
     let error = result.err().map(|err| format!("{:#}", err));
 
@@ -46,13 +51,17 @@ pub fn run(mut sdk: Sdk, result: Result<()>) {
     };
 
     let mut slice = data.into_boxed_slice();
-    unsafe { ffi::run_callback(slice.as_mut_ptr() as i32, slice.len() as i32) };
+    let len = slice.len().try_into().expect("result struct too large");
+
+    unsafe { ffi::run_callback(slice.as_mut_ptr() as i32, len) };
 }
 
 /// Allocate memory on the guest.
-#[inline(always)]
+#[inline]
+#[must_use]
 pub fn malloc(len: i32) -> i32 {
-    let vec = Vec::<u8>::with_capacity(len as usize);
+    let len = len.try_into().expect("unable to allocate memory");
+    let vec = Vec::<u8>::with_capacity(len);
     mem::ManuallyDrop::new(vec).as_mut_ptr() as i32
 }
 

@@ -18,6 +18,8 @@ pub struct Sdk {
 }
 
 impl<'a> Sdk {
+    #[must_use]
+    #[allow(clippy::missing_const_for_fn)] // false positive
     pub fn new(state: StateTransfer) -> Self {
         let StateTransfer {
             owned: owned_state,
@@ -51,6 +53,7 @@ impl<'a> Sdk {
     }
 
     /// Get a list of events since the last update.
+    #[must_use]
     pub fn events(&self) -> &[Event] {
         &self.events
     }
