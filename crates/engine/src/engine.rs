@@ -39,7 +39,7 @@ impl Default for Engine {
 }
 
 impl Engine {
-    pub fn builder<'a>() -> Builder<'a> {
+    pub fn builder() -> Builder {
         Builder::default()
     }
 

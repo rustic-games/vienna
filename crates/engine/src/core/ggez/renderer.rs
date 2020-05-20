@@ -1,6 +1,6 @@
 use crate::config;
-use common::{GameState, Value};
-use ggez::{graphics, nalgebra, Context, GameResult};
+use common::GameState;
+use ggez::{graphics, Context, GameResult};
 use std::time::Instant;
 
 #[derive(Debug)]
@@ -33,30 +33,11 @@ impl Renderer {
     fn render_game_state(ctx: &mut Context, state: &GameState) -> GameResult<()> {
         graphics::clear(ctx, [0.1, 0.2, 0.3, 1.0].into());
 
-        #[allow(clippy::cast_possible_truncation)]
-        let pos_x = state
-            .get("test")
-            .and_then(|p| p.get("pos_x"))
-            .and_then(Value::as_f64)
-            .unwrap_or(0.0) as f32;
+        for widget in state.widgets() {
+            let drawable = super::widget_to_graphic(ctx, widget)?;
+            graphics::draw(ctx, &drawable, graphics::DrawParam::default())?;
+        }
 
-        #[allow(clippy::cast_possible_truncation)]
-        let pos_y = state
-            .get("test")
-            .and_then(|p| p.get("pos_y"))
-            .and_then(Value::as_f64)
-            .unwrap_or(0.0) as f32;
-
-        let circle = graphics::Mesh::new_circle(
-            ctx,
-            graphics::DrawMode::fill(),
-            nalgebra::Point2::new(pos_x, pos_y),
-            100.0,
-            2.0,
-            graphics::WHITE,
-        )?;
-
-        graphics::draw(ctx, &circle, (nalgebra::Point2::new(0.0, 0.0),))?;
         graphics::present(ctx)
     }
 
@@ -78,7 +59,7 @@ impl Renderer {
 impl From<config::Renderer> for Renderer {
     fn from(config: config::Renderer) -> Self {
         let minimum_nanoseconds_between_renders = match config.max_frames_per_second {
-            Some(fps) => 1_000_000_000 / fps,
+            Some(fps) => 1_000_000_000 / u64::from(fps),
             None => 0,
         };
 

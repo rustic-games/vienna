@@ -9,37 +9,32 @@ use coffee::{
     load::Task,
     Game, Timer,
 };
-use common::{Event, GameState, Key};
+use common::{Event, Key};
 use once_cell::sync::OnceCell;
-use std::collections::HashSet;
+use std::{collections::HashSet, convert::TryInto};
 
 // A horrible hack to make Coffee work with our current initialization set-up.
-pub static mut CONFIG: OnceCell<Config> = OnceCell::new();
+pub static mut BUILDER: OnceCell<Builder> = OnceCell::new();
 
-#[derive(Debug)]
-pub struct Config {
-    plugin_paths: Vec<String>,
-    game_state: Option<GameState>,
-}
-
-impl Config {
-    pub fn new(plugin_paths: Vec<String>, game_state: Option<GameState>) -> Self {
-        Self {
-            plugin_paths,
-            game_state,
-        }
-    }
-}
-
+// Run the engine.
+//
+// The `Engine` attribute does not contain anything useful, as it is constructed
+// using `Engine::default()`. See the `build()` method on `EngineBuilder` to
+// read more about why this is.
 pub fn run(_: Engine) -> Result<(), Error> {
+    let config = unsafe { BUILDER.get_unchecked() };
+    let (width, height) = config.canvas.dimensions();
+
+    let width = (width * 2).try_into().expect("window width too large");
+    let height = (height * 2).try_into().expect("window height too large");
+
     let window = WindowSettings {
         title: "Vienna: work in progress".to_owned(),
-        // retina: https://github.com/hecrj/coffee/issues/6
-        size: (1600, 1200),
+        size: (width, height),
         resizable: false,
         fullscreen: false,
         maximized: false,
-        vsync: false,
+        vsync: config.vsync_enabled,
     };
 
     <Engine as Game>::run(window).unwrap();
@@ -54,16 +49,7 @@ impl Game for Engine {
     type LoadingScreen = (); // No loading screen
 
     fn load(_window: &Window) -> Task<Self> {
-        let config = unsafe { CONFIG.get_mut().unwrap() };
-
-        let mut builder = Builder::default();
-
-        for path in &config.plugin_paths {
-            builder = builder.with_plugin_path(path);
-        }
-
-        builder = builder.with_game_state(config.game_state.take().unwrap_or_default());
-
+        let builder = unsafe { BUILDER.get_mut().unwrap() };
         let engine = builder.build_inner().unwrap();
 
         Task::succeed(|| engine)
@@ -81,6 +67,8 @@ impl Game for Engine {
                 KeyCode::A => Key::A,
                 KeyCode::S => Key::S,
                 KeyCode::D => Key::D,
+                KeyCode::LShift | KeyCode::RShift => Key::Shift,
+                KeyCode::LControl | KeyCode::RControl => Key::Ctrl,
 
                 // Quit engine.
                 KeyCode::Escape => {
@@ -102,12 +90,15 @@ impl Game for Engine {
     }
 
     fn update(&mut self, _: &Window) {
+        let canvas = self.config.canvas;
         let handler = self.plugin_handler.as_mut();
 
-        self.updater.run(&mut self.game_state, handler).unwrap();
+        self.updater
+            .run(&mut self.game_state, canvas, handler)
+            .unwrap();
     }
 
-    fn draw(&mut self, frame: &mut Frame, _timer: &Timer) {
+    fn draw(&mut self, frame: &mut Frame<'_>, _timer: &Timer) {
         self.renderer.run(frame, &self.game_state)
     }
 

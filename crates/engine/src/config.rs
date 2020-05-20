@@ -1,23 +1,20 @@
-#[derive(Debug)]
-pub(super) struct Engine;
+use common::Canvas;
 
-impl Default for Engine {
-    fn default() -> Self {
-        Self
+#[derive(Debug)]
+pub(super) struct Engine {
+    pub canvas: Canvas,
+}
+
+impl From<Canvas> for Engine {
+    fn from(canvas: Canvas) -> Self {
+        Self { canvas }
     }
 }
 
-#[derive(Debug)]
-pub(super) struct PluginStore {
-    pub wasm: bool,
-    pub mock: bool,
-}
-
-impl Default for PluginStore {
+impl Default for Engine {
     fn default() -> Self {
         Self {
-            wasm: true,
-            mock: false,
+            canvas: Canvas::new(800, 600),
         }
     }
 }
@@ -37,13 +34,13 @@ impl Default for Updater {
 
 #[derive(Debug)]
 pub(super) struct Renderer {
-    pub max_frames_per_second: Option<u64>,
+    pub max_frames_per_second: Option<u16>,
 }
 
 impl Default for Renderer {
     fn default() -> Self {
         Self {
-            max_frames_per_second: Some(60),
+            max_frames_per_second: Some(90),
         }
     }
 }

@@ -16,6 +16,7 @@ use ggez::{
 };
 use std::{collections::HashSet, path::Path};
 
+#[allow(clippy::cast_precision_loss)]
 pub fn run(mut engine: Engine) -> Result<(), Error> {
     let window_setup = WindowSetup {
         title: "Vienna: work in progress".to_owned(),
@@ -25,9 +26,11 @@ pub fn run(mut engine: Engine) -> Result<(), Error> {
         srgb: true,
     };
 
+    let (width, height) = engine.config.canvas.dimensions();
+
     let window_mode = WindowMode {
-        width: 800.0,
-        height: 600.0,
+        width: f32::from(width),
+        height: f32::from(height),
         maximized: false,
         fullscreen_type: FullscreenType::Windowed,
         borderless: false,
@@ -64,6 +67,8 @@ impl EventHandler for Engine {
                 KeyCode::A => Key::A,
                 KeyCode::S => Key::S,
                 KeyCode::D => Key::D,
+                KeyCode::LShift | KeyCode::RShift => Key::Shift,
+                KeyCode::LControl | KeyCode::RControl => Key::Ctrl,
 
                 // All other keys are ignored for now.
                 _ => return Ok(()),
@@ -77,9 +82,10 @@ impl EventHandler for Engine {
             events.push(Event::Keyboard(keys));
         }
 
+        let canvas = self.config.canvas;
         let handler = self.plugin_handler.as_mut();
         self.updater
-            .run(&mut self.game_state, &events, handler)
+            .run(&mut self.game_state, canvas, &events, handler)
             .map_err(|err| match err {
                 // this is the only native error type supported by ggez
                 error::Updater::GameEngine(err) => err,

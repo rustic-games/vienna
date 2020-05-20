@@ -1,4 +1,4 @@
-use crate::{Deserialize, Event, Serialize, Value};
+use crate::{Canvas, Deserialize, Event, Serialize, Value, Widget};
 use std::collections::HashMap;
 
 /// The state of the game.
@@ -30,17 +30,38 @@ impl Game {
     pub fn get_mut(&mut self, plugin: impl Into<String>) -> Option<&mut Plugin> {
         self.state.get_mut(&plugin.into())
     }
+
+    /// Get all widgets managed by plugins
+    #[must_use]
+    pub fn widgets(&self) -> Vec<&Widget> {
+        let mut widgets = vec![];
+        for plugin in self.state.values() {
+            for widget in plugin.widgets.values() {
+                widgets.push(widget);
+            }
+        }
+
+        widgets
+    }
 }
 
 /// The state of a plugin.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-#[serde(transparent)]
 pub struct Plugin {
     #[serde(rename = "s")]
     state: HashMap<String, Value>,
+
+    #[serde(rename = "w")]
+    widgets: HashMap<String, Widget>,
 }
 
 impl Plugin {
+    /// Create a new plugin state object.
+    #[must_use]
+    pub const fn new(state: HashMap<String, Value>, widgets: HashMap<String, Widget>) -> Self {
+        Self { state, widgets }
+    }
+
     /// Get an immutable reference to a value.
     pub fn get(&self, key: impl Into<String>) -> Option<&Value> {
         self.state.get(&key.into())
@@ -50,11 +71,9 @@ impl Plugin {
     pub fn get_mut(&mut self, key: impl Into<String>) -> Option<&mut Value> {
         self.state.get_mut(&key.into())
     }
-}
 
-impl From<HashMap<String, Value>> for Plugin {
-    fn from(state: HashMap<String, Value>) -> Self {
-        Self { state }
+    pub fn get_widget_mut(&mut self, key: impl Into<String>) -> Option<&mut Widget> {
+        self.widgets.get_mut(&key.into())
     }
 }
 
@@ -71,6 +90,8 @@ pub struct Transfer {
     pub borrowed: HashMap<String, Plugin>,
     #[serde(rename = "e")]
     pub events: Vec<Event>,
+    #[serde(rename = "c")]
+    pub canvas: Canvas,
 }
 
 impl Transfer {

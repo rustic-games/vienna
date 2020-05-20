@@ -20,4 +20,4 @@ mod sdk;
 
 pub use error::Error;
 pub use internal::{init, malloc, run};
-pub use sdk::Sdk;
+pub use sdk::{Data, Sdk, State};

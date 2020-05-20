@@ -9,19 +9,26 @@ macro_rules! load {
             // Explicit type to improve compiler error for plugin authors.
             let registration: Registration = init();
 
-            $crate::init(registration);
+            $crate::init(&registration);
         }
 
         #[no_mangle]
         /// Run the plugin on every game update.
         pub extern "C" fn _run(ptr: i32, len: i32) {
-            let state = unsafe { StateTransfer::from_raw(ptr as *mut u8, len as usize) };
-            let mut sdk = $crate::Sdk::new(state);
+            // Get data transfered from host to guest.
+            let transfer = unsafe { StateTransfer::from_raw(ptr as *mut u8, len as usize) };
+
+            // Destructure into SDK, state and events.
+            let $crate::Data {
+                sdk,
+                mut state,
+                events,
+            } = transfer.into();
 
             // Explicit type to improve compiler error for plugin authors.
-            let result: Result<()> = run(&mut sdk);
+            let result: Result<()> = run(&sdk, &mut state, &events);
 
-            $crate::run(sdk, result);
+            $crate::run(state, result);
         }
 
         #[no_mangle]

@@ -8,6 +8,8 @@ pub enum Key {
     A,
     S,
     D,
+    Shift,
+    Ctrl,
 }
 
 /// A list of events the engine can trigger.

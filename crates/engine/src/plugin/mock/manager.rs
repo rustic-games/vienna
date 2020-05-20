@@ -1,7 +1,7 @@
 use super::plugin::Plugin;
 use crate::error;
 use crate::plugin::{Handler, Runtime};
-use common::{Event, GameState};
+use common::{Canvas, Event, GameState};
 use std::path::Path;
 
 /// A mock plugin implementation
@@ -14,10 +14,11 @@ impl Handler for Manager {
     fn run_plugins(
         &mut self,
         game_state: &mut GameState,
+        canvas: Canvas,
         events: &[Event],
     ) -> Result<(), error::Runtime> {
         for plugin in &mut self.plugins {
-            plugin.run(game_state, events)?;
+            plugin.run(game_state, canvas, events)?;
         }
 
         Ok(())
@@ -44,12 +45,13 @@ mod tests {
 
         #[test]
         fn works() {
+            let canvas = Canvas::default();
             let mut game_state = GameState::default();
             let mut manager = Manager::default();
             let plugin = Plugin::default();
             manager.plugins.push(plugin);
 
-            assert!(manager.run_plugins(&mut game_state, &[]).is_ok())
+            assert!(manager.run_plugins(&mut game_state, canvas, &[]).is_ok())
         }
     }
 

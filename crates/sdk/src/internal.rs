@@ -1,4 +1,13 @@
-use crate::Sdk;
+// Since these internal methods are only used in the `load` macro, which is only
+// used once per plugin, it makes sense to always inline them.
+//
+// Moreover, _somehow_ removing `always` from `fn run` breaks the code at
+// runtime.
+//
+// see: https://discordapp.com/channels/442252698964721669/443151097398296587/712193675702042626
+#![allow(clippy::inline_always)]
+
+use crate::State;
 use anyhow::Result;
 use common::{serde_json, Registration, RunResult, StateTransfer};
 use core::mem;
@@ -10,12 +19,10 @@ use std::convert::TryInto;
 ///
 /// The `registration` attribute contains the details set by the plugin to be
 /// used by the engine to validate the plugin registration.
-#[inline]
+#[inline(always)]
 pub fn init(registration: &Registration) {
-    let data = match serde_json::to_vec(registration) {
-        Ok(vec) => vec,
-        Err(_) => return,
-    };
+    // let registration: Vec<u8> = vec![];
+    let data = serde_json::to_vec(registration).expect("unable to serialize registration struct");
 
     let mut slice = data.into_boxed_slice();
     let len = slice
@@ -32,19 +39,23 @@ pub fn init(registration: &Registration) {
 ///
 /// The `result` attribute contains any errors the plugin generated while
 /// running.
-#[inline]
-pub fn run(mut sdk: Sdk, result: Result<()>) {
+#[inline(always)]
+pub fn run(mut state: State, result: Result<()>) {
     let error = result.err().map(|err| format!("{:#}", err));
 
     // Populate the run result with the updated state, if any.
-    let mut state = None;
-    if sdk.state_updated {
+    let mut new_state = None;
+    if state.updated {
         let mut state_transfer = StateTransfer::default();
-        state_transfer.owned = mem::take(&mut sdk.owned_state);
-        state = Some(state_transfer)
+        state_transfer.owned = mem::take(&mut state.owned);
+        new_state = Some(state_transfer)
     }
 
-    let run = RunResult { error, state };
+    let run = RunResult {
+        error,
+        state: new_state,
+    };
+
     let data = match serde_json::to_vec(&run) {
         Ok(vec) => vec,
         Err(err) => format!(r#"{{"error":"{:#}"}}"#, err).into_bytes(),
@@ -57,7 +68,7 @@ pub fn run(mut sdk: Sdk, result: Result<()>) {
 }
 
 /// Allocate memory on the guest.
-#[inline]
+#[inline(always)]
 #[must_use]
 pub fn malloc(len: i32) -> i32 {
     let len = len.try_into().expect("unable to allocate memory");

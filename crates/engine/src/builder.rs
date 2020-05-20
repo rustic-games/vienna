@@ -1,19 +1,25 @@
 use crate::error::Builder as Error;
 use crate::plugin::{wasm, Handler};
-use crate::Engine;
-use common::GameState;
+use crate::{config, Engine};
+use common::{Canvas, GameState};
 use std::path::PathBuf;
 
 type Result<T> = std::result::Result<T, Error>;
 
 /// A builder used to create an [`Engine`].
 #[derive(Debug, Default)]
-pub struct Builder<'a> {
-    plugin_paths: Vec<&'a str>,
+pub struct Builder {
+    plugin_paths: Vec<String>,
     game_state: Option<GameState>,
+    maximum_fps: Option<u16>,
+
+    // These are exported so that the `coffee` core's `run` function has access
+    // to the values when creating a new window.
+    pub(crate) canvas: Canvas,
+    pub(crate) vsync_enabled: bool,
 }
 
-impl<'a> Builder<'a> {
+impl Builder {
     /// Add a path from which *.wasm plugins are loaded.
     ///
     /// How it works:
@@ -21,8 +27,8 @@ impl<'a> Builder<'a> {
     /// - The entire directory tree of the path is searched for plugins.
     /// - A plugin is any file that has the "wasm" extension.
     /// - Duplicate file names are ignored (even for different paths).
-    pub fn with_plugin_path(mut self, path: &'a str) -> Self {
-        self.plugin_paths.push(path);
+    pub fn with_plugin_path(mut self, path: impl Into<String>) -> Self {
+        self.plugin_paths.push(path.into());
         self
     }
 
@@ -34,13 +40,48 @@ impl<'a> Builder<'a> {
         self
     }
 
+    /// Configure the width and height of the window.
+    pub const fn with_window_dimensions(mut self, width: u16, height: u16) -> Self {
+        self.canvas = Canvas::new(width, height);
+        self
+    }
+
+    /// Limit the frames per seconds to be equal or less than the refresh rate
+    /// of the monitor.
+    ///
+    /// Use this to limit screen-tearing.
+    pub const fn with_vsync(mut self) -> Self {
+        self.vsync_enabled = true;
+        self
+    }
+
+    /// The maximum frames the engine should render per second.
+    ///
+    /// Set this to reduce the system resources used by the engine.
+    ///
+    /// # Vertical synchronization
+    ///
+    /// If [`with_vsync()`] is provided, the frames per second will be
+    /// capped at the refresh rate of the active monitor, unless the maximum
+    /// frames per second is set at a lower value.
+    ///
+    /// Defaults to unlimited frames per second.
+    pub fn with_maximum_fps(mut self, fps: u16) -> Self {
+        self.maximum_fps = match fps {
+            0 => None,
+            fps => Some(fps),
+        };
+
+        self
+    }
+
     /// Build the final [`Engine`].
     ///
     /// # Errors
     ///
     /// Returns an error if anything is misconfigured.
     #[cfg(all(feature = "core-ggez", not(feature = "core-coffee")))]
-    pub fn build(self) -> Result<Engine> {
+    pub fn build(mut self) -> Result<Engine> {
         self.build_inner()
     }
 
@@ -49,6 +90,8 @@ impl<'a> Builder<'a> {
     // Since `coffee` must initialize the `Engine` by itself, we have to somehow
     // provide it with the configuration set in this builder.
     //
+    // See: https://github.com/hecrj/coffee/issues/72
+    //
     // For now, this is done through a mutable static variable that is set once
     // in the builder, and then consumed when starting the engine.
     //
@@ -56,21 +99,31 @@ impl<'a> Builder<'a> {
     //
     // 1. Is engine agnostic and doesn't need any conditional compilation.
     // 2. Does not need unsafe code and a global mutable variable to function.
+    //
+    // The current path to starting the coffee engine is:
+    //
+    // - Use builder and trigger `build`
+    //   - Store builder in global variable
+    //   - Return engine with default configuration
+    // - Use engine's `start` method
+    //   - Run coffee::run
+    //      - Fetch window config from global builder
+    //   - Run coffee's Game::load
+    //   - Load global builder
+    //   - Construct new builder with global config
+    //   - Call `build_inner` to create engine
+    //   - Start engine
+    //
     #[cfg(all(feature = "core-coffee", not(feature = "core-ggez")))]
     pub fn build(self) -> Result<Engine> {
-        use crate::core::{Config, CONFIG};
+        use crate::core::BUILDER;
 
-        let plugin_paths = self.plugin_paths.into_iter().map(str::to_owned).collect();
-        let game_state = self.game_state;
-
-        let config = Config::new(plugin_paths, game_state);
-
-        unsafe { CONFIG.set(config).unwrap() };
+        unsafe { BUILDER.set(self).unwrap() };
         Ok(Engine::default())
     }
 
-    pub(super) fn build_inner(self) -> Result<Engine> {
-        let mut game_state = self.game_state.unwrap_or_default();
+    pub(super) fn build_inner(&mut self) -> Result<Engine> {
+        let mut game_state = self.game_state.take().unwrap_or_default();
         let mut plugin_handler = Box::new(wasm::Manager::default());
 
         for path in &self.plugin_paths {
@@ -79,9 +132,16 @@ impl<'a> Builder<'a> {
             }
         }
 
+        let renderer = config::Renderer {
+            max_frames_per_second: self.maximum_fps,
+        }
+        .into();
+
         Ok(Engine {
+            config: self.canvas.into(),
             plugin_handler,
             game_state,
+            renderer,
             ..Engine::default()
         })
     }
@@ -137,13 +197,13 @@ mod tests {
             let builder = Builder::default();
             let builder = builder.with_plugin_path("foo");
 
-            assert_eq!(builder.plugin_paths.get(0), Some(&"foo"));
+            assert_eq!(builder.plugin_paths.get(0), Some(&"foo".to_owned()));
         }
     }
 
     mod build {
         use super::*;
-        use common::Value;
+        use common::{PluginState, Value};
         use std::collections::HashMap;
         use tempfile::NamedTempFile;
 
@@ -180,9 +240,13 @@ mod tests {
         #[test]
         fn with_game_state() {
             let mut game_state = GameState::default();
-            let mut plugin_state = HashMap::default();
-            plugin_state.insert("bar".to_owned(), Value::String("baz".to_owned()));
-            game_state.register_plugin_state("foo", plugin_state.into());
+            let widgets = HashMap::default();
+            let mut state = HashMap::default();
+            state.insert("bar".to_owned(), Value::String("baz".to_owned()));
+
+            let plugin_state = PluginState::new(state, widgets);
+
+            game_state.register_plugin_state("foo", plugin_state);
 
             let builder = Builder::default();
             let builder = builder.with_game_state(game_state);

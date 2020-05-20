@@ -1,7 +1,7 @@
 use super::HandlerError;
 use crate::error;
 use crate::plugin::{wasm::Plugin, Handler, Runtime};
-use common::{Event, GameState};
+use common::{Canvas, Event, GameState};
 use std::{fmt, fs, path::Path};
 use wasmtime::Store;
 
@@ -28,10 +28,11 @@ impl Handler for Manager {
     fn run_plugins(
         &mut self,
         game_state: &mut GameState,
+        canvas: Canvas,
         events: &[Event],
     ) -> Result<(), error::Runtime> {
         for plugin in &mut self.plugins {
-            plugin.run(game_state, events)?;
+            plugin.run(game_state, canvas, events)?;
         }
 
         Ok(())
@@ -72,15 +73,18 @@ mod tests {
 
         #[test]
         fn empty() {
+            let canvas = Canvas::default();
             let mut game_state = GameState::default();
             let mut manager = Manager::default();
 
-            assert!(manager.run_plugins(&mut game_state, &[]).is_ok())
+            assert!(manager.run_plugins(&mut game_state, canvas, &[]).is_ok())
         }
 
         #[test]
         fn multiple() {
             use crate::plugin::wasm::plugin::tests::WAT_VALID;
+
+            let canvas = Canvas::default();
             let mut game_state = GameState::default();
             let mut manager = Manager::default();
 
@@ -90,12 +94,14 @@ mod tests {
             let p = plugin(WAT_VALID);
             manager.plugins.push(p);
 
-            assert!(manager.run_plugins(&mut game_state, &[]).is_ok())
+            assert!(manager.run_plugins(&mut game_state, canvas, &[]).is_ok())
         }
 
         #[test]
         fn with_failure() {
             use crate::plugin::wasm::plugin::tests::{WAT_MISSING_FUNC, WAT_VALID};
+
+            let canvas = Canvas::default();
             let mut game_state = GameState::default();
             let mut manager = Manager::default();
 
@@ -105,7 +111,11 @@ mod tests {
             let p = plugin(WAT_MISSING_FUNC);
             manager.plugins.push(p);
 
-            let err = anyhow::Error::new(manager.run_plugins(&mut game_state, &[]).unwrap_err());
+            let err = anyhow::Error::new(
+                manager
+                    .run_plugins(&mut game_state, canvas, &[])
+                    .unwrap_err(),
+            );
 
             assert_eq!(
                 format!("{:?}", err),

@@ -1,8 +1,11 @@
 use super::RuntimeError;
-use crate::error;
-use crate::plugin::{Func, Runtime};
+use crate::{
+    error,
+    plugin::{Func, Runtime},
+};
 use common::{
-    serde_json, DeserializeOwned, Event, GameState, Registration, RunResult, StateTransfer,
+    serde_json, Canvas, DeserializeOwned, Event, GameState, PluginState, Registration, RunResult,
+    StateTransfer,
 };
 use std::cell::Cell;
 use std::collections::HashMap;
@@ -44,7 +47,7 @@ impl Plugin {
     ) -> Result<Self, RuntimeError> {
         let module = Module::new(store, source)?;
 
-        let registration = Rc::new(Cell::new(None));
+        let registration: Rc<Cell<Option<Registration>>> = Rc::new(Cell::new(None));
         let run_result = Rc::new(Cell::new(None));
 
         let host_functions = vec![
@@ -62,9 +65,19 @@ impl Plugin {
         }
 
         // Only register state plugin if anything needs to be tracked.
-        if let Some(state) = &mut registration.state {
-            game_state.register_plugin_state(registration.name.clone(), mem::take(state).into());
-        }
+        let state = match &mut registration.state {
+            Some(state) => mem::take(state),
+            None => HashMap::default(),
+        };
+
+        let widgets = match &mut registration.widgets {
+            Some(widgets) => mem::take(widgets),
+            None => HashMap::default(),
+        };
+
+        let plugin_state = PluginState::new(state, widgets);
+
+        game_state.register_plugin_state(registration.name.clone(), plugin_state);
 
         Ok(Self {
             instance,
@@ -169,7 +182,12 @@ impl Runtime for Plugin {
     ///
     /// This requires the Wasm module to expose a `_run` function that takes two
     /// i32 arguments and returns no values.
-    fn run(&mut self, game_state: &mut GameState, events: &[Event]) -> Result<(), error::Runtime> {
+    fn run(
+        &mut self,
+        game_state: &mut GameState,
+        canvas: Canvas,
+        events: &[Event],
+    ) -> Result<(), error::Runtime> {
         let owned = game_state.get(self.name()).cloned().unwrap_or_default();
 
         let mut borrowed = HashMap::default();
@@ -184,8 +202,10 @@ impl Runtime for Plugin {
         let state = StateTransfer {
             owned,
             borrowed,
+            canvas,
             events: events.to_vec(),
         };
+
         let vec = serde_json::to_vec(&state).map_err(RuntimeError::from)?;
         let vec_size: i32 = vec.len().try_into().map_err(RuntimeError::from)?;
 
@@ -270,20 +290,23 @@ pub(super) mod tests {
 
         #[test]
         fn valid() {
+            let canvas = Canvas::default();
             let mut game_state = GameState::default();
 
             assert!(plugin(WAT_VALID)
                 .expect("valid plugin")
-                .run(&mut game_state, &[])
+                .run(&mut game_state, canvas, &[])
                 .is_ok())
         }
 
         #[test]
         fn missing_function() {
+            let canvas = Canvas::default();
             let mut game_state = GameState::default();
-            let result = plugin(WAT_MISSING_FUNC)
-                .expect("valid plugin")
-                .run(&mut game_state, &[]);
+            let result =
+                plugin(WAT_MISSING_FUNC)
+                    .expect("valid plugin")
+                    .run(&mut game_state, canvas, &[]);
             let err = anyhow::Error::new(result.unwrap_err());
 
             assert_eq!(
@@ -297,10 +320,11 @@ pub(super) mod tests {
 
         #[test]
         fn invalid_function_signature() {
+            let canvas = Canvas::default();
             let mut game_state = GameState::default();
             let result = plugin(WAT_INVALID_FUNC_SIGNATURE)
                 .expect("valid plugin")
-                .run(&mut game_state, &[]);
+                .run(&mut game_state, canvas, &[]);
             let err = anyhow::Error::new(result.unwrap_err());
 
             assert_eq!(

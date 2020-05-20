@@ -1,5 +1,5 @@
 use crate::{config, error, plugin::Handler};
-use common::{Event, GameState};
+use common::{Canvas, Event, GameState};
 
 #[derive(Debug)]
 pub struct Updater {
@@ -16,13 +16,13 @@ pub struct Updater {
 }
 
 impl Updater {
-    #[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
     pub fn run(
         &mut self,
         state: &mut GameState,
+        canvas: Canvas,
         plugin_handler: &mut dyn Handler,
     ) -> Result<(), error::Updater> {
-        plugin_handler.run_plugins(state, &self.active_events)?;
+        plugin_handler.run_plugins(state, canvas, &self.active_events)?;
 
         self.active_events.clear();
         Ok(())

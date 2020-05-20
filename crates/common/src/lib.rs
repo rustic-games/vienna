@@ -12,15 +12,19 @@
 )]
 #![allow(clippy::multiple_crate_versions)]
 
+mod canvas;
 mod event;
 mod registration;
 mod run_result;
 mod state;
+mod widget;
 
+pub use canvas::Canvas;
 pub use event::{Event, Key};
 pub use registration::Registration;
 pub use run_result::RunResult;
 pub use state::{Game as GameState, Plugin as PluginState, Transfer as StateTransfer};
+pub use widget::Widget;
 
 // A list of third-party exposed types used by both the engine and SDK.
 pub use serde::{de::DeserializeOwned, Deserialize, Serialize};

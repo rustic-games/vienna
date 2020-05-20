@@ -1,55 +1,105 @@
+use std::collections::HashSet;
+
 vienna::load!();
 
-fn init() -> Registration {
-    Registration::new("test")
-        .state("pos_y", Value::from(0.0))
-        .state("pos_x", Value::from(0.0))
+#[derive(Debug, Copy, Clone)]
+struct Movement {
+    direction: Direction,
+    speed: Speed,
 }
 
-fn run(sdk: &mut Sdk) -> Result<()> {
-    let mut plugin = Plugin { sdk };
-    plugin.handle_events();
+#[derive(Debug, Copy, Clone)]
+enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+#[derive(Debug, Copy, Clone)]
+enum Speed {
+    Normal,
+    Fast,
+    Turbo,
+}
+
+fn init() -> Registration {
+    Registration::new("test").widget(
+        "circle",
+        Widget::Circle {
+            x: 200.0,
+            y: 200.0,
+            radius: 100.0,
+        },
+    )
+}
+
+fn run(sdk: &Sdk, state: &mut State, events: &[Event]) -> Result<()> {
+    let window_dimensions = sdk.canvas().dimensions();
+    let widget = state.get_widget_mut("circle").unwrap();
+
+    for event in events {
+        for movement in event_to_movements(&event) {
+            transform_widget(widget, movement, window_dimensions)
+        }
+    }
 
     Ok(())
 }
 
-struct Plugin<'a> {
-    sdk: &'a mut Sdk,
-}
+fn transform_widget(widget: &mut Widget, movement: Movement, (x_max, y_max): (u16, u16)) {
+    match widget {
+        Widget::Circle { x, y, radius } => {
+            let (x_max, y_max) = (x_max as f32, y_max as f32);
+            let (x_old, y_old, radius) = (*x, *y, *radius);
 
-impl<'a> Plugin<'a> {
-    fn handle_events(&mut self) {
-        let events = self.sdk.events().to_vec();
+            let dv = match movement.speed {
+                Speed::Normal => 1.0,
+                Speed::Fast => 3.0,
+                Speed::Turbo => 5.0,
+            };
 
-        for event in events {
-            if let Event::Keyboard(keys) = event {
-                keys.into_iter().for_each(|k| self.handle_key(k));
-            }
+            let (x_new, y_new) = match movement.direction {
+                Direction::Up => (x_old, radius.max(y_old - dv)),
+                Direction::Left => (radius.max(x_old - dv), y_old),
+                Direction::Down => (x_old, (y_max - radius).min(y_old + dv)),
+                Direction::Right => ((x_max - radius).min(x_old + dv), y_old),
+            };
+
+            *x = x_new;
+            *y = y_new;
         }
     }
+}
 
-    fn handle_key(&mut self, key: Key) {
-        match key {
-            Key::W | Key::S => {
-                let value_y = self.sdk.get_mut("pos_y").unwrap();
-                let pos_y = value_y.as_f64().unwrap_or(0.0) as f32;
-
-                match key {
-                    Key::W if pos_y > 0.0 => *value_y = Value::from(pos_y - 1.0),
-                    Key::S if pos_y < 600.0 => *value_y = Value::from(pos_y + 1.0),
-                    _ => {}
-                }
-            }
-            Key::A | Key::D => {
-                let value_x = self.sdk.get_mut("pos_x").unwrap();
-                let pos_x = value_x.as_f64().unwrap_or(0.0) as f32;
-
-                match key {
-                    Key::A if pos_x > 0.0 => *value_x = Value::from(pos_x - 1.0),
-                    Key::D if pos_x < 800.0 => *value_x = Value::from(pos_x + 1.0),
-                    _ => {}
-                }
-            }
+fn event_to_movements(event: &Event) -> Vec<Movement> {
+    match event {
+        Event::Keyboard(keys) => {
+            let speed = keys_to_speed(&keys);
+            keys.iter()
+                .copied()
+                .filter_map(key_to_direction)
+                .map(|direction| Movement { direction, speed })
+                .collect()
         }
+        _ => vec![],
+    }
+}
+
+fn keys_to_speed(keys: &HashSet<Key>) -> Speed {
+    match () {
+        _ if keys.contains(&Key::Shift) => Speed::Fast,
+        _ if keys.contains(&Key::Ctrl) => Speed::Turbo,
+        _ => Speed::Normal,
+    }
+}
+
+fn key_to_direction(key: Key) -> Option<Direction> {
+    match key {
+        Key::W => Some(Direction::Up),
+        Key::A => Some(Direction::Left),
+        Key::S => Some(Direction::Down),
+        Key::D => Some(Direction::Right),
+        _ => None,
     }
 }

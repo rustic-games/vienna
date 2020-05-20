@@ -1,5 +1,5 @@
 use crate::{config, error, plugin::Handler};
-use common::{Event, GameState};
+use common::{Canvas, Event, GameState};
 use std::time::Instant;
 
 #[derive(Debug)]
@@ -33,6 +33,7 @@ impl Updater {
     pub fn run(
         &mut self,
         state: &mut GameState,
+        canvas: Canvas,
         events: &[Event],
         plugin_handler: &mut dyn Handler,
     ) -> Result<(), error::Updater> {
@@ -44,7 +45,7 @@ impl Updater {
         // update a single game update. The required available time
         // depends on the configured updates per second.
         while self.accumulated_time >= self.update_interval {
-            self.update_game_state(state, events, plugin_handler)?;
+            self.update_game_state(state, canvas, events, plugin_handler)?;
 
             self.accumulated_time -= self.update_interval;
             self.total_time += self.update_interval;
@@ -62,11 +63,12 @@ impl Updater {
     pub(crate) fn update_game_state(
         &mut self,
         state: &mut GameState,
+        canvas: Canvas,
         events: &[Event],
         plugin_handler: &mut dyn Handler,
     ) -> Result<(), error::Updater> {
         plugin_handler
-            .run_plugins(state, events)
+            .run_plugins(state, canvas, events)
             .map_err(Into::into)
     }
 }
@@ -93,16 +95,17 @@ mod tests {
 
     #[test]
     fn update_game_state() {
+        let canvas = Canvas::default();
         let mut state = GameState::default();
         let mut updater: Updater = config::Updater::default().into();
         let mut handler = crate::plugin::mock::Manager::default();
         handler.register_plugin(&mut state, Path::new("")).unwrap();
 
         updater
-            .update_game_state(&mut state, &[], &mut handler)
+            .update_game_state(&mut state, canvas, &[], &mut handler)
             .unwrap();
         updater
-            .update_game_state(&mut state, &[], &mut handler)
+            .update_game_state(&mut state, canvas, &[], &mut handler)
             .unwrap();
 
         assert_eq!(handler.as_mock().unwrap().plugins[0].runs, 2);
