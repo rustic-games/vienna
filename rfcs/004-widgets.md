@@ -88,6 +88,103 @@ The first version of this proposal will use the default widgets, extending them
 as more widgets are needed, and potentially at some point allowing plugins to
 register their own widgets on initialization.
 
+## Custom Widgets
+
+A plugin should be able to define custom widgets that the engine understands.
+
+### Anatomy of a Widget
+
+What is a "widget"?
+
+A widget consists of these elements:
+
+- Shapes
+- Attributes
+- State
+- Logic
+- Events
+
+#### Shapes
+
+A widget is a collection of primitive shapes that make up a whole.
+
+For example, a "button" widget can be built from a rectangle, and text.
+
+#### Attributes
+
+A widget exposes a set of attributes used to tweak the final representation of
+itself.
+
+The button widget exposes four attributes to define:
+
+- The dimensions of the rectangle
+- The text shown inside the rectangle
+- A default color of the rectangle
+- A color for the "hover state" of the rectangle
+
+#### State
+
+Widgets are often interactive, which means they have state.
+
+The button widget needs to update its "active color" state from default to
+hover, based on the position of the mouse cursor.
+
+#### Logic
+
+In order for a widget to be interactive, it needs to contain logic to determine
+how it should behave.
+
+The button widget needs to know when the mouse cursor moves over the rectangle,
+to update its internal color state to the hover variant.
+
+#### Events
+
+Lastly, a widget needs to be able to expose certain events it generates.
+
+The button needs to emit a "clicked" event when the player clicks on the
+rectangle.
+
+### Potential Implementations
+
+#### Serialized Definitions
+
+One solution is to define a widget template within the initialization step of a
+plugin.
+
+The plugin serializes and sends the widget definition to the server. The server
+"compiles" the definition to a template and makes it available to plugins to
+use.
+
+While this initially seems to be a straightforward implementation, it gets more
+complex when you want to serialize the "logic" of the widget.
+
+#### WebAssembly Widgets
+
+Another approach is for widgets to be their own wasm modules.
+
+This enables way more advanced widgets with large logic parts written in
+whatever language used to compile to WebAssembly.
+
+The downside of this is that each active widget requires an extra runtime call
+into the wasm instance. This might incur an unacceptable performance overhead
+for more complex games with a large number of widgets.
+
+Implementation-wise, these widgets relate to the existing WebAssembly plugins,
+with tweaks to support the above mentioned widget elements.
+
+Each widget module exposes two sets of attributes:
+
+- Events it wants to act on
+- The (boxed) dimensions of the widget
+
+The engine can use these details to know when it needs to call into the widget
+instance to run its logic.
+
+For example, if a widget acts on a press of the `A` key, the engine knows to run
+its logic if the player presses `A`. Similarly, if an instance of the widget has
+a certain dimension and position on the canvas, the engine runs its logic if the
+mouse is within the bounds.
+
 [`ggez`]: https://github.com/ggez/ggez
 [`winit`]: https://github.com/rust-windowing/winit
 [`iced`]: https://github.com/hecrj/iced
