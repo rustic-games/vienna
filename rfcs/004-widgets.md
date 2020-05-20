@@ -167,7 +167,7 @@ whatever language used to compile to WebAssembly.
 
 The downside of this is that each active widget requires an extra runtime call
 into the wasm instance. This might incur an unacceptable performance overhead
-for more complex games with a large number of widgets.
+for more complex games.
 
 Implementation-wise, these widgets relate to the existing WebAssembly plugins,
 with tweaks to support the above mentioned widget elements.
@@ -184,6 +184,23 @@ For example, if a widget acts on a press of the `A` key, the engine knows to run
 its logic if the player presses `A`. Similarly, if an instance of the widget has
 a certain dimension and position on the canvas, the engine runs its logic if the
 mouse is within the bounds.
+
+While this implementation is indeed more complex, it also provides more
+opportunities:
+
+- Limitless support for complex widgets
+- The community can share widgets
+- Plugins can re-use existing widgets
+
+The major downside of this approach is the performance implications. Given that
+the Vienna engine isn't focused on high-performance 3D games, this isn't a
+deal-breaker for now.
+
+The engine can still support often-used default widgets by compiling them into
+the library and thus incur a lower runtime cost.
+
+Implementation-wise, the `Wiget` enum would get an extra `Wasm` variant, which
+contains the details needed to render a widget from the WebAssembly module.
 
 [`ggez`]: https://github.com/ggez/ggez
 [`winit`]: https://github.com/rust-windowing/winit

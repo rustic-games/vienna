@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog], and this project adheres to
 
 ## _[Unreleased]_
 
+- rfc: hybrid wasm and compiled widgets
 - rfc: custom (interactive) widgets
 - feat: add plugin-managed widgets
 - style: resolve clippy warnings
