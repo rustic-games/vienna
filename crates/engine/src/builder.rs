@@ -1,16 +1,29 @@
-use crate::error::Builder as Error;
-use crate::plugin::{wasm, Handler};
-use crate::{config, Engine};
+use crate::{
+    config,
+    error::Builder as Error,
+    plugin::{wasm, Handler},
+    Engine,
+};
 use common::{Canvas, GameState};
-use std::path::PathBuf;
+use std::{mem, path::PathBuf};
 
-type Result<T> = std::result::Result<T, Error>;
-
-/// A builder used to create an [`Engine`].
+/// Convenient way to create an [`Engine`].
+///
+/// # Example
+///
+/// ```
+/// # use vienna_engine::Engine;
+/// Engine::builder()
+///     .with_plugin_path("plugins")
+///     .with_window_dimensions(800, 600)
+///     .with_vsync()
+///     .build()?;
+/// # Ok::<(), vienna_engine::error::Builder>(())
+/// ```
 #[derive(Debug, Default)]
 pub struct Builder {
-    plugin_paths: Vec<String>,
-    game_state: Option<GameState>,
+    plugin_paths: Vec<PathBuf>,
+    game_state: GameState,
     maximum_fps: Option<u16>,
 
     // These are exported so that the `coffee` core's `run` function has access
@@ -27,7 +40,7 @@ impl Builder {
     /// - The entire directory tree of the path is searched for plugins.
     /// - A plugin is any file that has the "wasm" extension.
     /// - Duplicate file names are ignored (even for different paths).
-    pub fn with_plugin_path(mut self, path: impl Into<String>) -> Self {
+    pub fn with_plugin_path(mut self, path: impl Into<PathBuf>) -> Self {
         self.plugin_paths.push(path.into());
         self
     }
@@ -36,7 +49,7 @@ impl Builder {
     ///
     /// This can be used to resume an active game session.
     pub fn with_game_state(mut self, game_state: GameState) -> Self {
-        self.game_state = Some(game_state);
+        self.game_state = game_state;
         self
     }
 
@@ -81,7 +94,7 @@ impl Builder {
     ///
     /// Returns an error if anything is misconfigured.
     #[cfg(all(feature = "core-ggez", not(feature = "core-coffee")))]
-    pub fn build(mut self) -> Result<Engine> {
+    pub fn build(mut self) -> Result<Engine, Error> {
         self.build_inner()
     }
 
@@ -115,15 +128,15 @@ impl Builder {
     //   - Start engine
     //
     #[cfg(all(feature = "core-coffee", not(feature = "core-ggez")))]
-    pub fn build(self) -> Result<Engine> {
+    pub fn build(self) -> Result<Engine, Error> {
         use crate::core::BUILDER;
 
         unsafe { BUILDER.set(self).unwrap() };
         Ok(Engine::default())
     }
 
-    pub(super) fn build_inner(&mut self) -> Result<Engine> {
-        let mut game_state = self.game_state.take().unwrap_or_default();
+    pub(super) fn build_inner(&mut self) -> Result<Engine, Error> {
+        let mut game_state = mem::take(&mut self.game_state);
         let mut plugin_handler = Box::new(wasm::Manager::default());
 
         for path in &self.plugin_paths {
@@ -132,10 +145,9 @@ impl Builder {
             }
         }
 
-        let renderer = config::Renderer {
+        let renderer = From::from(config::Renderer {
             max_frames_per_second: self.maximum_fps,
-        }
-        .into();
+        });
 
         Ok(Engine {
             config: self.canvas.into(),
@@ -152,7 +164,7 @@ impl Builder {
 /// Files with duplicate names are ignored. Even if two plugins reside in
 /// different directories, if their names are equal, only the first one is added
 /// to the list of plugins.
-fn find_plugins_in_path(path: &str) -> Result<Vec<PathBuf>> {
+fn find_plugins_in_path(path: &PathBuf) -> Result<Vec<PathBuf>, Error> {
     use std::collections::HashSet;
     use std::ffi::OsStr;
     use walkdir::WalkDir;
@@ -197,7 +209,7 @@ mod tests {
             let builder = Builder::default();
             let builder = builder.with_plugin_path("foo");
 
-            assert_eq!(builder.plugin_paths.get(0), Some(&"foo".to_owned()));
+            assert_eq!(builder.plugin_paths.get(0), Some(&"foo".into()));
         }
     }
 

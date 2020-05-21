@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog], and this project adheres to
 
 ## _[Unreleased]_
 
+- refactor: improve builder implementation
 - rfc: hybrid wasm and compiled widgets
 - rfc: custom (interactive) widgets
 - feat: add plugin-managed widgets
