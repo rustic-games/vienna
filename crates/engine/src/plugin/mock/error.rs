@@ -1,10 +1,9 @@
-use displaydoc::Display;
 use thiserror::Error;
 
-/// `WasmRuntime` related errors.
-#[derive(Debug, Display, Error)]
+#[derive(Debug, Error)]
+#[error("`WasmRuntime` related errors.")]
 pub struct Runtime;
 
-/// `WasmPlugin` related errors.
-#[derive(Debug, Display, Error)]
+#[derive(Debug, Error)]
+#[error("`WasmPlugin` related errors.")]
 pub struct Handler;

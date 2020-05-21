@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog], and this project adheres to
 
 ## _[Unreleased]_
 
+- refactor: remove doc comments from error variants
 - refactor: improve builder implementation
 - rfc: hybrid wasm and compiled widgets
 - rfc: custom (interactive) widgets

@@ -1,5 +1,4 @@
 use crate::plugin::wasm;
-use displaydoc::Display;
 #[cfg(feature = "core-ggez")]
 use ggez::error::GameError;
 use std::io;
@@ -7,46 +6,45 @@ use thiserror::Error;
 
 /// Top-level error object exposing all possible error variants this crate can
 /// produce.
-#[derive(Debug, Display, Error)]
+#[derive(Debug, Error)]
 pub enum Error {
-    /// engine builder error
+    #[error("engine builder error")]
     EngineBuilder(#[from] Builder),
 
-    /// plugin handler error
+    #[error("plugin handler error")]
     PluginHandler(#[from] Handler),
 
-    /// game error
     #[cfg(feature = "core-ggez")]
+    #[error("game error")]
     Game(#[from] GameError),
 }
 
 /// `EngineBuilder` related errors.
-#[derive(Debug, Display, Error)]
+#[derive(Debug, Error)]
 pub enum Builder {
-    /// inaccessible plugin `{path}` ({kind:?})
+    #[error("inaccessible plugin `{path}` ({kind:?})")]
     Io { path: String, kind: io::ErrorKind },
 
-    /// plugin handler error
+    #[error("plugin handler error")]
     PluginHandler(#[from] Handler),
 
-    /// unknown builder error
+    #[error("unknown builder error")]
     Unknown,
 }
 
 /// `plugin::Runtime` related errors.
-#[derive(Debug, Display, Error)]
+#[derive(Debug, Error)]
 pub enum Runtime {
-    /// wasm runtime error
+    #[error("wasm runtime error")]
     WasmRuntime(#[from] wasm::RuntimeError),
 }
 
 /// `plugin::Handler` related errors.
-#[derive(Debug, Display, Error)]
+#[derive(Debug, Error)]
 pub enum Handler {
-    /// wasm handler error
+    #[error("wasm handler error")]
     WasmHandler(#[from] wasm::HandlerError),
 
-    /// runtime error
     #[error(transparent)]
     Runtime(#[from] Runtime),
 }
@@ -72,12 +70,12 @@ impl From<walkdir::Error> for Builder {
 }
 
 /// Game update related error
-#[derive(Debug, Display, Error)]
+#[derive(Debug, Error)]
 pub enum Updater {
-    /// plugin runtime error
+    #[error("plugin runtime error")]
     PluginRuntime(#[from] Runtime),
 
-    /// game engine error
     #[cfg(feature = "core-ggez")]
+    #[error("game engine error")]
     GameEngine(#[from] GameError),
 }

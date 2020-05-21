@@ -1,46 +1,45 @@
 use crate::plugin::Func;
 use anyhow::Error;
 use common::serde_json;
-use displaydoc::Display;
 use std::io;
 use std::path::PathBuf;
 use thiserror::Error;
 use wasmtime::Trap;
 
 /// `WasmRuntime` related errors.
-#[derive(Debug, Display, Error)]
+#[derive(Debug, Error)]
 pub enum Runtime {
-    /// missing exported `{0}` function
+    #[error("missing exported `{0}` function")]
     MissingExportedFunction(Func),
 
-    /// invalid exported `{func}` function
+    #[error("invalid exported `{func}` function")]
     InvalidExportedFunction { func: Func, source: Error },
 
-    /// failed registration
+    #[error("failed registration")]
     Registration,
 
-    /// missing plugin name
+    #[error("missing plugin name")]
     MissingName,
 
-    /// cannot access runtime memory
+    #[error("cannot access runtime memory")]
     MemoryAccess,
 
-    /// UTF-8 error
+    #[error("UTF-8 error")]
     Utf8(#[from] std::str::Utf8Error),
 
-    /// codec error
+    #[error("codec error")]
     Codec(#[from] serde_json::Error),
 
-    /// plugin error
+    #[error("plugin error")]
     Plugin(String),
 
-    /// error running `{func}`
+    #[error("error running `{func}`")]
     Failed { func: Func, source: Trap },
 
-    /// unable to run module
+    #[error("unable to run module")]
     InvalidModule(#[source] anyhow::Error),
 
-    /// unknown wasm error
+    #[error("unknown wasm error")]
     Unknown(#[source] anyhow::Error),
 }
 
@@ -71,12 +70,12 @@ impl From<anyhow::Error> for Runtime {
 }
 
 /// `WasmPlugin` related errors.
-#[derive(Debug, Display, Error)]
+#[derive(Debug, Error)]
 pub enum Handler {
-    /// inaccessible wasm module `{path}` ({kind:?})
+    #[error("inaccessible wasm module `{path}` ({kind:?})")]
     Io { path: PathBuf, kind: io::ErrorKind },
 
-    /// invalid wasm module `{path}`
+    #[error("invalid wasm module `{path}`")]
     InvalidPlugin { path: PathBuf, source: Runtime },
 }
 
