@@ -14,7 +14,7 @@
 
 mod error;
 mod internal;
-mod load;
+mod plugin;
 pub mod prelude;
 mod sdk;
 

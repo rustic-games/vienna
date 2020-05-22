@@ -13,7 +13,7 @@ use common::{serde_json, Registration, RunResult, StateTransfer};
 use core::mem;
 use std::convert::TryInto;
 
-/// An internal function called by the `load!()` macro.
+/// An internal function called by the `plugin!()` macro.
 ///
 /// This function is called by the engine when a new plugin is loaded.
 ///
@@ -33,7 +33,7 @@ pub fn init(registration: &Registration) {
     unsafe { ffi::init_callback(slice.as_mut_ptr() as i32, len) };
 }
 
-/// An internal function called by the `load!()` macro.
+/// An internal function called by the `plugin!()` macro.
 ///
 /// This function is called by the engine every time a plugin runs.
 ///

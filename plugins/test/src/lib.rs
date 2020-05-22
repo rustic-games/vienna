@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-vienna::load!();
+vienna::plugin!();
 
 #[derive(Debug, Copy, Clone)]
 struct Movement {

@@ -1,5 +1,5 @@
 #[macro_export]
-macro_rules! load {
+macro_rules! plugin {
     () => {
         use $crate::prelude::*;
 
