@@ -9,4 +9,4 @@ publish = false
 crate-type = ['cdylib']
 
 [dependencies]
-vienna = { path = "../../crates/sdk" }
+vienna = { package = "vienna-plugin", path = "../../crates/sdk-plugin" }

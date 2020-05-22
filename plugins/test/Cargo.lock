@@ -82,7 +82,7 @@ dependencies = [
 name = "test"
 version = "0.1.0"
 dependencies = [
- "vienna",
+ "vienna-plugin",
 ]
 
 [[package]]
@@ -112,18 +112,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "826e7639553986605ec5979c7dd957c7895e93eabed50ab2ffa7f6128a75097c"
 
 [[package]]
-name = "vienna"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "thiserror",
- "vienna-common",
-]
-
-[[package]]
 name = "vienna-common"
 version = "0.1.0"
 dependencies = [
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "vienna-plugin"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "thiserror",
+ "vienna-common",
 ]

@@ -2992,15 +2992,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "078775d0255232fb988e6fccf26ddc9d1ac274299aaedcedce21c6f72cc533ce"
 
 [[package]]
-name = "vienna"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "thiserror",
- "vienna-common",
-]
-
-[[package]]
 name = "vienna-common"
 version = "0.1.0"
 dependencies = [
@@ -3022,6 +3013,15 @@ dependencies = [
  "vienna-common",
  "walkdir",
  "wasmtime",
+]
+
+[[package]]
+name = "vienna-plugin"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "thiserror",
+ "vienna-common",
 ]
 
 [[package]]

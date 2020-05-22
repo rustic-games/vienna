@@ -1,5 +1,5 @@
 [package]
-name = "vienna"
+name = "vienna-plugin"
 version = "0.1.0"
 description = "The Vienna SDK to build engine plugins in Rust."
 repository = "https://github.com/rustic-games/vienna"
