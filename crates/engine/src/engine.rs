@@ -1,8 +1,8 @@
 //! The main engine implementation.
 
 use crate::{
+    backend::{Renderer, Updater},
     config,
-    core::{Renderer, Updater},
     plugin::Handler,
     Builder, Error,
 };
@@ -49,6 +49,6 @@ impl Engine {
 
     /// Run the engine to completion or until an error occurs.
     pub fn run(self) -> Result<(), Error> {
-        crate::core::run(self)
+        crate::backend::run(self)
     }
 }

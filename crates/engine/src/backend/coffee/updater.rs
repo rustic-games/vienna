@@ -1,4 +1,4 @@
-//! The updater implementation for the coffee core.
+//! The updater implementation for the coffee backend.
 
 use crate::{config, error, plugin::Handler, widget};
 use common::{Canvas, Event, GameState};

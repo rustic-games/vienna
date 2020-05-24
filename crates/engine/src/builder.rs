@@ -33,7 +33,7 @@ pub struct Builder {
     /// The maximum number of frames per second to run the game at.
     maximum_fps: Option<u16>,
 
-    // These are exported so that the `coffee` core's `run` function has access
+    // These are exported so that the `coffee` backend's `run` function has access
     // to the values when creating a new window.
     /// Details about the canvas of the game.
     pub(crate) canvas: Canvas,
@@ -104,7 +104,7 @@ impl Builder {
     /// # Errors
     ///
     /// Returns an error if anything is misconfigured.
-    #[cfg(all(feature = "core-ggez", not(feature = "core-coffee")))]
+    #[cfg(all(feature = "backend-ggez", not(feature = "backend-coffee")))]
     pub fn build(mut self) -> Result<Engine, Error> {
         self.build_inner()
     }
@@ -138,9 +138,9 @@ impl Builder {
     ///   - Call `build_inner` to create engine
     ///   - Start engine
     ///
-    #[cfg(all(feature = "core-coffee", not(feature = "core-ggez")))]
+    #[cfg(all(feature = "backend-coffee", not(feature = "backend-ggez")))]
     pub fn build(self) -> Result<Engine, Error> {
-        use crate::core::BUILDER;
+        use crate::backend::BUILDER;
 
         if unsafe { BUILDER.set(self) }.is_err() {
             todo!("logging")
@@ -152,7 +152,7 @@ impl Builder {
     /// Actual logic to build the engine.
     ///
     /// This is split from the regular `build()` method because that method
-    /// are implemented differently based on the enabled core.
+    /// are implemented differently based on the enabled backend.
     pub(super) fn build_inner(&mut self) -> Result<Engine, Error> {
         let mut game_state = mem::take(&mut self.game_state);
         let mut plugin_handler = Box::new(wasm::Manager::default());

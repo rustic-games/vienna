@@ -15,11 +15,11 @@ pub enum Error {
     #[error("plugin handler error")]
     PluginHandler(#[from] Handler),
 
-    #[cfg(feature = "core-coffee")]
+    #[cfg(feature = "backend-coffee")]
     #[error("game error")]
     Game(#[from] coffee::Error),
 
-    #[cfg(feature = "core-ggez")]
+    #[cfg(feature = "backend-ggez")]
     #[error("game error")]
     Game(#[from] ggez::GameError),
 }
@@ -87,7 +87,7 @@ pub enum Updater {
     #[error("plugin runtime error")]
     PluginRuntime(#[from] Runtime),
 
-    #[cfg(feature = "core-ggez")]
+    #[cfg(feature = "backend-ggez")]
     #[error("game engine error")]
     GameEngine(#[from] ggez::GameError),
 }

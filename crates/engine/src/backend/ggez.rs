@@ -1,4 +1,4 @@
-//! The "ggez" game engine core.
+//! The "ggez" game engine backend.
 
 mod renderer;
 mod run;

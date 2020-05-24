@@ -16,7 +16,7 @@ use ggez::{
 };
 use std::{collections::HashSet, path::Path};
 
-/// Run the ggez core.
+/// Run the ggez backend.
 #[allow(clippy::cast_precision_loss)]
 pub fn run(mut engine: Engine) -> Result<(), Error> {
     let window_setup = WindowSetup {

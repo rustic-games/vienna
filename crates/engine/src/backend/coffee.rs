@@ -1,4 +1,4 @@
-//! The "coffee" game engine core.
+//! The "coffee" game engine backend.
 
 mod renderer;
 mod run;

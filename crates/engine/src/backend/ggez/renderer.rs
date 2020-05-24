@@ -1,15 +1,15 @@
-//! The renderer implementation for the coffee core.
+//! The renderer implementation for the ggez backend.
 
 use crate::{config, widget};
-use coffee::graphics::{self, Frame, Mesh, Point};
 use common::{Color, Component, GameState, Shape};
+use ggez::{graphics, nalgebra, Context, GameResult};
 use std::time::Instant;
 
 /// Handles rendering frames to the screen.
 #[derive(Debug)]
 pub struct Renderer {
     /// The configuration of the renderer.
-    config: config::Renderer,
+    pub(crate) config: config::Renderer,
 
     /// A cache of the timestamp the last step finished.
     ///
@@ -24,16 +24,26 @@ pub struct Renderer {
 
 impl Renderer {
     /// Render the state of the game to the screen.
-    pub fn run(&mut self, frame: &mut Frame<'_>, state: &GameState) {
+    pub fn run(
+        &mut self,
+        ctx: &mut Context,
+        state: &GameState,
+        _step_progress: f64,
+    ) -> GameResult<()> {
+        // Check if we are exceeding the configured max FPS
+        if !self.should_render() {
+            return Ok(());
+        }
+
         // We're allowed to render. Record the timestamp for future render
         // decisions.
         self.last_step_timestamp = Instant::now();
 
-        render_game_state(frame, state)
+        render_game_state(ctx, state)
     }
 
     /// Should the renderer render to the screen, based on the max FPS settings?
-    pub fn should_run(&self) -> bool {
+    fn should_render(&self) -> bool {
         if self.minimum_nanoseconds_between_renders == 0 {
             return true;
         }
@@ -48,13 +58,8 @@ impl Renderer {
 }
 
 /// Render the state of the game to the screen.
-fn render_game_state(frame: &mut Frame<'_>, state: &GameState) {
-    frame.clear(graphics::Color {
-        r: 0.1,
-        g: 0.2,
-        b: 0.3,
-        a: 1.0,
-    });
+fn render_game_state(ctx: &mut Context, state: &GameState) -> GameResult<()> {
+    graphics::clear(ctx, [0.1, 0.2, 0.3, 1.0].into());
 
     for widget_with_position in state.widgets() {
         if !widget_with_position.is_visible() {
@@ -66,67 +71,55 @@ fn render_game_state(frame: &mut Frame<'_>, state: &GameState) {
         let coordinates = widget_with_position.coordinates();
 
         for component in widget::components(&widget) {
-            render_component(frame, &component, coordinates);
+            render_component(ctx, &component, coordinates);
         }
     }
+
+    graphics::present(ctx)
 }
 
-/// The Coffee core does not support high-DPI mode yet (retina screens).
-///
-/// See: <https://github.com/hecrj/coffee/issues/6>
-///
-/// The current way to deal with this works as follows:
-///
-/// When building the engine, the width and height of the window are defined by
-/// the `game_state`.
-///
-/// When the `coffee` core is used, these values will be doubled so that the
-/// window is the correct size on retina screens.
-///
-/// The actual size of the "canvas" is left unchanged. This allows the plugins
-/// to use "points" as if they are pixels.
-///
-/// Then, in this function when we convert a widget to an actual graphic, we
-/// double all pixel values.
-fn render_component(frame: &mut Frame<'_>, component: &Component, (mut x, mut y): (f32, f32)) {
+/// Render a single component to the screen.
+fn render_component(ctx: &mut Context, component: &Component, (mut x, mut y): (f32, f32)) {
     let (x_rel, y_rel) = component.coordinates;
 
     x += x_rel;
     y += y_rel;
 
-    let (shape, color) = match component.shape {
-        Shape::Circle { radius, color } => {
-            let shape = graphics::Shape::Circle {
-                center: Point::new(x * 2.0, y * 2.0),
-                radius: radius * 2.0,
-            };
-
-            (shape, color)
-        }
+    let drawable = match component.shape {
+        Shape::Circle { radius, color } => graphics::Mesh::new_circle(
+            ctx,
+            graphics::DrawMode::fill(),
+            nalgebra::Point2::new(x, y),
+            radius.max(1.0),
+            2.0,
+            into_color(color),
+        ),
         Shape::Rectangle {
             width,
             height,
             color,
-        } => {
-            let rect = graphics::Rectangle {
+        } => graphics::Mesh::new_rectangle(
+            ctx,
+            graphics::DrawMode::fill(),
+            graphics::Rect {
                 x,
                 y,
-                width,
-                height,
-            };
-
-            let shape = graphics::Shape::Rectangle(rect);
-
-            (shape, color)
-        }
+                w: width,
+                h: height,
+            },
+            into_color(color),
+        ),
     };
 
-    let mut mesh = Mesh::new();
-    mesh.fill(shape, into_color(color));
-    mesh.draw(&mut frame.as_target());
+    let result = drawable
+        .and_then(|drawable| graphics::draw(ctx, &drawable, graphics::DrawParam::default()));
+
+    if result.is_err() {
+        todo!("logging")
+    }
 }
 
-/// Convert our color struct to Coffee's one.
+/// convert our color into a ggez color.
 const fn into_color(color: Color) -> graphics::Color {
     let Color { r, g, b, a } = color;
     graphics::Color { r, g, b, a }

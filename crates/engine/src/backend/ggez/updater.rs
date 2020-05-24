@@ -1,4 +1,4 @@
-//! The updater implementation for the ggez core.
+//! The updater implementation for the ggez backend.
 
 use crate::{config, error, plugin::Handler, widget};
 use common::{Canvas, Event, GameState};

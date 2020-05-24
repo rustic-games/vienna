@@ -12,9 +12,9 @@ edition = "2018"
 publish = false
 
 [features]
-default = ["core-ggez"]
-core-ggez = ["ggez"]
-core-coffee = ["coffee", "once_cell"]
+default = ["backend-ggez"]
+backend-ggez = ["ggez"]
+backend-coffee = ["coffee", "once_cell"]
 
 [dependencies]
 anyhow = "1.0"

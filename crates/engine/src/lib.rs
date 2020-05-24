@@ -27,16 +27,16 @@ mod error;
 mod plugin;
 mod widget;
 
-/// The core-coffee implementation.
-#[cfg(all(feature = "core-coffee", not(feature = "core-ggez")))]
-mod core {
+/// The backend-coffee implementation.
+#[cfg(all(feature = "backend-coffee", not(feature = "backend-ggez")))]
+mod backend {
     mod coffee;
     pub use self::coffee::*;
 }
 
-/// The core-ggez implementation.
-#[cfg(all(feature = "core-ggez", not(feature = "core-coffee")))]
-mod core {
+/// The backend-ggez implementation.
+#[cfg(all(feature = "backend-ggez", not(feature = "backend-coffee")))]
+mod backend {
     mod ggez;
     pub use self::ggez::*;
 }
