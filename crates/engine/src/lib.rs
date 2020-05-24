@@ -17,6 +17,7 @@ mod config;
 mod engine;
 mod error;
 mod plugin;
+mod widget;
 
 #[cfg(all(feature = "core-coffee", not(feature = "core-ggez")))]
 mod core {

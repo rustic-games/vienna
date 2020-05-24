@@ -1,4 +1,4 @@
-use crate::{config, error, plugin::Handler};
+use crate::{config, error, plugin::Handler, widget};
 use common::{Canvas, Event, GameState};
 use std::time::Instant;
 
@@ -72,9 +72,10 @@ fn update_game_state(
     let mut widget_events = vec![];
 
     for (name, widget) in state.widgets_mut() {
-        widget_events.append(&mut super::widget::update(name, widget, input_events))
+        widget_events.append(&mut widget::update(name, widget, input_events))
     }
 
+    // TODO: A plugin should only see events from the widgets that belong to it.
     plugin_handler
         .run_plugins(state, canvas, &widget_events)
         .map_err(Into::into)

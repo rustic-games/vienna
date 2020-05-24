@@ -1,8 +1,7 @@
 use common::{
     widget::{ButtonRectangle, MovingCircle, Runtime, Widget},
-    Color, Event, Shape, WidgetWithPosition,
+    Component, Event, WidgetWithPosition,
 };
-use ggez::{graphics, nalgebra, Context};
 use std::convert::TryFrom;
 
 /// Take a list of widgets, and a list of input events, and run each widget with
@@ -43,40 +42,12 @@ pub(super) fn update(
     all_widget_events
 }
 
-pub(super) fn render(ctx: &mut Context, widget: &Widget, (mut x, mut y): (f32, f32)) {
+/// Return the components for a given widget.
+pub(super) fn components(widget: &Widget) -> Vec<Component> {
     let rt: Box<dyn Runtime> = match widget {
         Widget::MovingCircle(state) => Box::new(MovingCircle::try_from(state).expect("TODO")),
         Widget::ButtonRectangle(state) => Box::new(ButtonRectangle::try_from(state).expect("TODO")),
     };
 
-    for component in rt.render() {
-        let (x_rel, y_rel) = component.coordinates;
-
-        x += x_rel;
-        y += y_rel;
-
-        let drawable = match component.shape {
-            Shape::Circle { radius, color } => graphics::Mesh::new_circle(
-                ctx,
-                graphics::DrawMode::fill(),
-                nalgebra::Point2::new(x, y),
-                radius.max(1.0),
-                2.0,
-                into_color(color),
-            ),
-            _ => todo!(),
-        };
-
-        graphics::draw(
-            ctx,
-            &drawable.expect("TODO"),
-            graphics::DrawParam::default(),
-        )
-        .expect("TODO");
-    }
-}
-
-fn into_color(color: Color) -> graphics::Color {
-    let Color { r, g, b, a } = color;
-    graphics::Color { r, g, b, a }
+    rt.render()
 }

@@ -1,6 +1,6 @@
-use crate::config;
-use coffee::graphics::{Color, Frame};
-use common::GameState;
+use crate::{config, widget};
+use coffee::graphics::{self, Frame, Mesh, Point};
+use common::{Color, Component, GameState, Shape};
 use std::time::Instant;
 
 #[derive(Debug)]
@@ -17,7 +17,7 @@ impl Renderer {
         // decisions.
         self.last_step_timestamp = Instant::now();
 
-        Self::render_game_state(frame, state)
+        render_game_state(frame, state)
     }
 
     /// Should the renderer render to the screen, based on the max FPS settings?
@@ -33,19 +33,76 @@ impl Renderer {
 
         last_step_nanoseconds >= self.minimum_nanoseconds_between_renders
     }
+}
 
-    fn render_game_state(frame: &mut Frame<'_>, state: &GameState) {
-        frame.clear(Color {
-            r: 0.1,
-            g: 0.2,
-            b: 0.3,
-            a: 1.0,
-        });
+/// Render the state of the game to the screen.
+fn render_game_state(frame: &mut Frame<'_>, state: &GameState) {
+    frame.clear(graphics::Color {
+        r: 0.1,
+        g: 0.2,
+        b: 0.3,
+        a: 1.0,
+    });
 
-        for widget in state.widgets() {
-            super::widget_to_graphic(frame, widget);
+    for widget_with_position in state.widgets() {
+        if !widget_with_position.is_visible() {
+            continue;
+        }
+
+        // TODO: remove clone
+        let widget = widget_with_position.widget().clone().into();
+        let coordinates = widget_with_position.coordinates();
+
+        for component in widget::components(&widget) {
+            render_component(frame, &component, coordinates);
         }
     }
+}
+
+/// The Coffee core does not support high-DPI mode yet (retina screens).
+///
+/// See: <https://github.com/hecrj/coffee/issues/6>
+///
+/// The current way to deal with this works as follows:
+///
+/// When building the engine, the width and height of the window are defined by
+/// the `game_state`.
+///
+/// When the `coffee` core is used, these values will be doubled so that the
+/// window is the correct size on retina screens.
+///
+/// The actual size of the "canvas" is left unchanged. This allows the plugins
+/// to use "points" as if they are pixels.
+///
+/// Then, in this function when we convert a widget to an actual graphic, we
+/// double all pixel values.
+fn render_component(frame: &mut Frame<'_>, component: &Component, (mut x, mut y): (f32, f32)) {
+    let (x_rel, y_rel) = component.coordinates;
+
+    x += x_rel;
+    y += y_rel;
+
+    let (shape, color) = match component.shape {
+        Shape::Circle { radius, color } => {
+            let shape = graphics::Shape::Circle {
+                center: Point::new(x * 2.0, y * 2.0),
+                radius: radius * 2.0,
+            };
+
+            (shape, color)
+        }
+        _ => todo!(),
+    };
+
+    let mut mesh = Mesh::new();
+    mesh.fill(shape, into_color(color));
+    mesh.draw(&mut frame.as_target());
+}
+
+/// Convert our color struct to Coffee's one.
+fn into_color(color: Color) -> graphics::Color {
+    let Color { r, g, b, a } = color;
+    graphics::Color { r, g, b, a }
 }
 
 impl From<config::Renderer> for Renderer {

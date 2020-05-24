@@ -1,4 +1,4 @@
-use crate::{config, error, plugin::Handler};
+use crate::{config, error, plugin::Handler, widget};
 use common::{Canvas, Event, GameState};
 
 #[derive(Debug)]
@@ -22,7 +22,14 @@ impl Updater {
         canvas: Canvas,
         plugin_handler: &mut dyn Handler,
     ) -> Result<(), error::Updater> {
-        plugin_handler.run_plugins(state, canvas, &self.active_events)?;
+        let mut widget_events = vec![];
+        let input_events = &self.active_events;
+
+        for (name, widget) in state.widgets_mut() {
+            widget_events.append(&mut widget::update(name, widget, input_events))
+        }
+
+        plugin_handler.run_plugins(state, canvas, &widget_events)?;
 
         self.active_events.clear();
         Ok(())

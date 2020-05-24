@@ -9,7 +9,7 @@ use coffee::{
     load::Task,
     Game, Timer,
 };
-use common::{Event, Key};
+use common::{event, Event, Key};
 use once_cell::sync::OnceCell;
 use std::{collections::HashSet, convert::TryInto};
 
@@ -63,10 +63,22 @@ impl Game for Engine {
         let mut keys = HashSet::new();
         for pressed_key in input.pressed_keys() {
             let key = match pressed_key {
-                KeyCode::W => Key::W,
+                // letter keys
                 KeyCode::A => Key::A,
-                KeyCode::S => Key::S,
+                KeyCode::B => Key::B,
                 KeyCode::D => Key::D,
+                KeyCode::E => Key::E,
+                KeyCode::G => Key::G,
+                KeyCode::Q => Key::Q,
+                KeyCode::R => Key::R,
+                KeyCode::S => Key::S,
+                KeyCode::W => Key::W,
+
+                // other keys
+                KeyCode::Equals if input.is_key_pressed(KeyCode::LShift) => Key::Plus,
+                KeyCode::Minus => Key::Minus,
+
+                // modifier keys
                 KeyCode::LShift | KeyCode::RShift => Key::Shift,
                 KeyCode::LControl | KeyCode::RControl => Key::Ctrl,
 
@@ -83,7 +95,7 @@ impl Game for Engine {
             keys.insert(key);
         }
 
-        let event = Event::Keyboard(keys);
+        let event = Event::Input(event::Input::Keyboard { keys });
         if !self.updater.active_events.contains(&event) {
             self.updater.active_events.push(event);
         }

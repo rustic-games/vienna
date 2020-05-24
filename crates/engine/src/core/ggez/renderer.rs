@@ -1,6 +1,6 @@
-use crate::config;
-use common::GameState;
-use ggez::{graphics, Context, GameResult};
+use crate::{config, widget};
+use common::{Color, Component, GameState, Shape};
+use ggez::{graphics, nalgebra, Context, GameResult};
 use std::time::Instant;
 
 #[derive(Debug)]
@@ -27,23 +27,7 @@ impl Renderer {
         // decisions.
         self.last_step_timestamp = Instant::now();
 
-        Self::render_game_state(ctx, state)
-    }
-
-    fn render_game_state(ctx: &mut Context, state: &GameState) -> GameResult<()> {
-        graphics::clear(ctx, [0.1, 0.2, 0.3, 1.0].into());
-
-        for widget_with_position in state.widgets() {
-            if !widget_with_position.is_visible() {
-                continue;
-            }
-
-            // TODO: remove clone
-            let widget = widget_with_position.widget().clone().into();
-            super::widget::render(ctx, &widget, widget_with_position.coordinates());
-        }
-
-        graphics::present(ctx)
+        render_game_state(ctx, state)
     }
 
     /// Should the renderer render to the screen, based on the max FPS settings?
@@ -59,6 +43,58 @@ impl Renderer {
 
         last_step_nanoseconds >= self.minimum_nanoseconds_between_renders
     }
+}
+
+/// Render the state of the game to the screen.
+fn render_game_state(ctx: &mut Context, state: &GameState) -> GameResult<()> {
+    graphics::clear(ctx, [0.1, 0.2, 0.3, 1.0].into());
+
+    for widget_with_position in state.widgets() {
+        if !widget_with_position.is_visible() {
+            continue;
+        }
+
+        // TODO: remove clone
+        let widget = widget_with_position.widget().clone().into();
+        let coordinates = widget_with_position.coordinates();
+
+        for component in widget::components(&widget) {
+            render_component(ctx, &component, coordinates);
+        }
+    }
+
+    graphics::present(ctx)
+}
+
+fn render_component(ctx: &mut Context, component: &Component, (mut x, mut y): (f32, f32)) {
+    let (x_rel, y_rel) = component.coordinates;
+
+    x += x_rel;
+    y += y_rel;
+
+    let drawable = match component.shape {
+        Shape::Circle { radius, color } => graphics::Mesh::new_circle(
+            ctx,
+            graphics::DrawMode::fill(),
+            nalgebra::Point2::new(x, y),
+            radius.max(1.0),
+            2.0,
+            into_color(color),
+        ),
+        _ => todo!(),
+    };
+
+    graphics::draw(
+        ctx,
+        &drawable.expect("TODO"),
+        graphics::DrawParam::default(),
+    )
+    .expect("TODO");
+}
+
+fn into_color(color: Color) -> graphics::Color {
+    let Color { r, g, b, a } = color;
+    graphics::Color { r, g, b, a }
 }
 
 impl From<config::Renderer> for Renderer {
