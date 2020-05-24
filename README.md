@@ -11,6 +11,48 @@ The goal is to allow writing a visual novel without having to write any code,
 while also allowing more complex interactive novels by building game logic in
 your programming language of choice.
 
+## Visual Novel
+
+The term "visual novel" is somewhat broad and vague.
+
+In Vienna's case, it represents the following characteristics:
+
+1. The game provides a visual story.
+2. The gameplay ranges from minimal to full interactivity.
+3. You play a (non-linear) sequence of scenes.
+4. The world operates in 2D space.
+5. It does not require high-performance computing.
+
+There are more genres that fit this description, and all are a focus point of
+the engine:
+
+- [Visual Novel](https://www.giantbomb.com/_/3015-2029)
+- [Interactive Film](https://en.wikipedia.org/wiki/Interactive_film)
+- [(Point & Click) Adventure Game](https://en.wikipedia.org/wiki/Adventure_game#Point-and-click_adventure_games)
+
+The biggest inspiration for this engine is an all-time classic game: [Indiana
+Jones and the Fate of Atlantis][indy].
+
+There are others, such as [Myst], [Broken Age], [The Walking Dead], [The Longest
+Journey], [Life is Strange], [Broken Sword], [Dreamfall], [The Curse of Monkey
+Island], [Blade Runner], [Syberia] and [Starship Titanic].
+
+Not all of these can be represented by this engine, but the goal is to cover as
+much as possible, by offering a flexible system of _plugins_ and _widgets_.
+
+[indy]: https://www.gog.com/game/indiana_jones_and_the_fate_of_atlantis
+[myst]: https://www.gog.com/game/myst_masterpiece_edition
+[broken age]: https://www.gog.com/game/broken_age
+[the walking dead]: https://www.gog.com/game/walking_dead_season_1_the
+[the longest journey]: https://www.gog.com/game/the_longest_journey
+[life is strange]: https://en.wikipedia.org/wiki/Life_Is_Strange
+[broken sword]: https://www.gog.com/game/broken_sword_directors_cut
+[dreamfall]: https://www.gog.com/game/dreamfall_the_longest_journey
+[the curse of monkey island]: https://www.gog.com/game/the_curse_of_monkey_island
+[blade runner]: https://www.gog.com/game/blade_runner
+[syberia]: https://www.gog.com/game/syberia
+[starship titanic]: https://www.gog.com/game/starship_titanic
+
 ## Concept
 
 - Engine written in [Rust][]
