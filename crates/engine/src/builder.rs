@@ -131,7 +131,7 @@ impl Builder {
     pub fn build(self) -> Result<Engine, Error> {
         use crate::core::BUILDER;
 
-        unsafe { BUILDER.set(self).unwrap() };
+        unsafe { BUILDER.set(self).expect("valid builder") };
         Ok(Engine::default())
     }
 

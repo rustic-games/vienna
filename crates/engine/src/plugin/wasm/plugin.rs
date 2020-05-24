@@ -225,12 +225,12 @@ impl Runtime for Plugin {
         let offset: i32 = Self::call1(&self.instance, Func::Malloc, vec_size)?;
         let offset_size: usize = offset.try_into().map_err(RuntimeError::from)?;
 
-        let memory = self.instance.get_memory("memory").unwrap();
+        let memory = self.instance.get_memory("memory").expect("valid memory");
 
         unsafe {
             let data = memory.data_unchecked_mut();
             let mut slice = &mut data[offset_size..(offset_size + vec.len())];
-            slice.write_all(&vec).unwrap();
+            slice.write_all(&vec).expect("TODO");
         }
 
         Self::call2(&self.instance, Func::Run, offset, vec_size)?;

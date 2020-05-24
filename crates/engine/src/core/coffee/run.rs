@@ -37,7 +37,7 @@ pub fn run(_: Engine) -> Result<(), Error> {
         vsync: config.vsync_enabled,
     };
 
-    <Engine as Game>::run(window).unwrap();
+    <Engine as Game>::run(window).expect("TODO");
 
     Ok(())
 }
@@ -49,8 +49,8 @@ impl Game for Engine {
     type LoadingScreen = (); // No loading screen
 
     fn load(_window: &Window) -> Task<Self> {
-        let builder = unsafe { BUILDER.get_mut().unwrap() };
-        let engine = builder.build_inner().unwrap();
+        let builder = unsafe { BUILDER.get_mut().expect("TODO") };
+        let engine = builder.build_inner().expect("TODO");
 
         Task::succeed(|| engine)
     }
@@ -107,7 +107,7 @@ impl Game for Engine {
 
         self.updater
             .run(&mut self.game_state, canvas, handler)
-            .unwrap();
+            .expect("TODO");
     }
 
     fn draw(&mut self, frame: &mut Frame<'_>, _timer: &Timer) {

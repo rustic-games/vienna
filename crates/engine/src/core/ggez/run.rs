@@ -53,7 +53,7 @@ pub fn run(mut engine: Engine) -> Result<(), Error> {
         .with_conf_file(false)
         .add_resource_path(Path::new("./resources"))
         .build()
-        .unwrap();
+        .expect("TODO");
 
     ggez::event::run(&mut ctx, &mut event_loop, &mut engine).map_err(Into::into)
 }
