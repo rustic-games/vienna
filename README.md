@@ -56,7 +56,7 @@ much as possible, by offering a flexible system of _plugins_ and _widgets_.
 ## Concept
 
 - Engine written in [Rust][]
-- First class support for [WebAssembly][wasm] based plugins
+- First class support for [WebAssembly][wasm] based plugins and widgets
 - Games built using a storybook and plugins
 
 [rust]: https://www.rust-lang.org/

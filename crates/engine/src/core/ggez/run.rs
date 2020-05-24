@@ -7,11 +7,11 @@
 //! to the screen.
 
 use crate::{error, Engine, Error};
-use common::{Event, Key};
+use common::{event, Event, Key};
 use ggez::{
     conf::{FullscreenType, ModuleConf, NumSamples, WindowMode, WindowSetup},
-    event::{self, EventHandler},
-    input::keyboard::{self, KeyCode},
+    event::EventHandler,
+    input::keyboard::{self, KeyCode, KeyMods},
     Context, ContextBuilder, GameResult,
 };
 use std::{collections::HashSet, path::Path};
@@ -55,7 +55,7 @@ pub fn run(mut engine: Engine) -> Result<(), Error> {
         .build()
         .unwrap();
 
-    event::run(&mut ctx, &mut event_loop, &mut engine).map_err(Into::into)
+    ggez::event::run(&mut ctx, &mut event_loop, &mut engine).map_err(Into::into)
 }
 
 impl EventHandler for Engine {
@@ -63,10 +63,22 @@ impl EventHandler for Engine {
         let mut keys = HashSet::new();
         for pressed_key in keyboard::pressed_keys(ctx) {
             let key = match pressed_key {
-                KeyCode::W => Key::W,
+                // letter keys
                 KeyCode::A => Key::A,
-                KeyCode::S => Key::S,
+                KeyCode::B => Key::B,
                 KeyCode::D => Key::D,
+                KeyCode::E => Key::E,
+                KeyCode::G => Key::G,
+                KeyCode::Q => Key::Q,
+                KeyCode::R => Key::R,
+                KeyCode::S => Key::S,
+                KeyCode::W => Key::W,
+
+                // other keys
+                KeyCode::Equals if keyboard::is_mod_active(ctx, KeyMods::SHIFT) => Key::Plus,
+                KeyCode::Minus => Key::Minus,
+
+                // modifier keys
                 KeyCode::LShift | KeyCode::RShift => Key::Shift,
                 KeyCode::LControl | KeyCode::RControl => Key::Ctrl,
 
@@ -79,7 +91,7 @@ impl EventHandler for Engine {
 
         let mut events = vec![];
         if !keys.is_empty() {
-            events.push(Event::Keyboard(keys));
+            events.push(Event::Input(event::Input::Keyboard { keys }));
         }
 
         let canvas = self.config.canvas;

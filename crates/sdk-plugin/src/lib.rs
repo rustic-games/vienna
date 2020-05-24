@@ -17,6 +17,7 @@ mod internal;
 mod plugin;
 pub mod prelude;
 mod sdk;
+pub mod widget;
 
 pub use error::Error;
 pub use internal::{init, malloc, run};

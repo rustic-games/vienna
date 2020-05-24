@@ -252,9 +252,9 @@ mod tests {
         #[test]
         fn with_game_state() {
             let mut game_state = GameState::default();
-            let widgets = HashMap::default();
+            let widgets: HashMap<&str, _> = HashMap::default();
             let mut state = HashMap::default();
-            state.insert("bar".to_owned(), Value::String("baz".to_owned()));
+            state.insert("bar", "baz");
 
             let plugin_state = PluginState::new(state, widgets);
 

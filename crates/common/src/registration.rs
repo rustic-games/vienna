@@ -1,4 +1,4 @@
-use crate::{Deserialize, Serialize, Value, Widget};
+use crate::{widget, Deserialize, Serialize, Value, WidgetWithPosition};
 use std::collections::HashMap;
 
 /// The `Registration` type is used by plugins in the `init` function to expose
@@ -11,7 +11,7 @@ pub struct Registration {
     #[serde(rename = "s")]
     pub state: Option<HashMap<String, Value>>,
     #[serde(rename = "w")]
-    pub widgets: Option<HashMap<String, Widget>>,
+    pub widgets: Option<HashMap<String, WidgetWithPosition>>,
     #[serde(rename = "d")]
     pub dependencies: Option<Vec<String>>,
 }
@@ -34,10 +34,13 @@ impl Registration {
     }
 
     /// Define a key/value pair of a widget this plugin wants to control.
-    pub fn widget(mut self, key: impl Into<String>, widget: Widget) -> Self {
+    #[must_use]
+    pub fn widget(mut self, widget: widget::Builder) -> Self {
+        let (name, widget) = widget.build();
+
         self.widgets
             .get_or_insert(HashMap::default())
-            .insert(key.into(), widget);
+            .insert(name, widget);
 
         self
     }

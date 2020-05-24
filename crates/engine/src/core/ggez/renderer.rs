@@ -33,9 +33,14 @@ impl Renderer {
     fn render_game_state(ctx: &mut Context, state: &GameState) -> GameResult<()> {
         graphics::clear(ctx, [0.1, 0.2, 0.3, 1.0].into());
 
-        for widget in state.widgets() {
-            let drawable = super::widget_to_graphic(ctx, widget)?;
-            graphics::draw(ctx, &drawable, graphics::DrawParam::default())?;
+        for widget_with_position in state.widgets() {
+            if !widget_with_position.is_visible() {
+                continue;
+            }
+
+            // TODO: remove clone
+            let widget = widget_with_position.widget().clone().into();
+            super::widget::render(ctx, &widget, widget_with_position.coordinates());
         }
 
         graphics::present(ctx)

@@ -45,7 +45,7 @@ impl Updater {
         // update a single game update. The required available time
         // depends on the configured updates per second.
         while self.accumulated_time >= self.update_interval {
-            self.update_game_state(state, canvas, events, plugin_handler)?;
+            update_game_state(state, canvas, events, plugin_handler)?;
 
             self.accumulated_time -= self.update_interval;
             self.total_time += self.update_interval;
@@ -58,19 +58,26 @@ impl Updater {
 
         Ok(())
     }
+}
 
-    #[allow(clippy::unused_self)]
-    pub(crate) fn update_game_state(
-        &mut self,
-        state: &mut GameState,
-        canvas: Canvas,
-        events: &[Event],
-        plugin_handler: &mut dyn Handler,
-    ) -> Result<(), error::Updater> {
-        plugin_handler
-            .run_plugins(state, canvas, events)
-            .map_err(Into::into)
+/// Run the relevant code to update the state of the game.
+///
+/// This includes updating the widgets and running all plugins.
+fn update_game_state(
+    state: &mut GameState,
+    canvas: Canvas,
+    input_events: &[Event],
+    plugin_handler: &mut dyn Handler,
+) -> Result<(), error::Updater> {
+    let mut widget_events = vec![];
+
+    for (name, widget) in state.widgets_mut() {
+        widget_events.append(&mut super::widget::update(name, widget, input_events))
     }
+
+    plugin_handler
+        .run_plugins(state, canvas, &widget_events)
+        .map_err(Into::into)
 }
 
 impl From<config::Updater> for Updater {
@@ -94,19 +101,14 @@ mod tests {
     use std::path::Path;
 
     #[test]
-    fn update_game_state() {
+    fn test_update_game_state() {
         let canvas = Canvas::default();
         let mut state = GameState::default();
-        let mut updater: Updater = config::Updater::default().into();
         let mut handler = crate::plugin::mock::Manager::default();
         handler.register_plugin(&mut state, Path::new("")).unwrap();
 
-        updater
-            .update_game_state(&mut state, canvas, &[], &mut handler)
-            .unwrap();
-        updater
-            .update_game_state(&mut state, canvas, &[], &mut handler)
-            .unwrap();
+        update_game_state(&mut state, canvas, &[], &mut handler).unwrap();
+        update_game_state(&mut state, canvas, &[], &mut handler).unwrap();
 
         assert_eq!(handler.as_mock().unwrap().plugins[0].runs, 2);
     }

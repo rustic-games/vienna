@@ -1,20 +1,113 @@
-use crate::{Deserialize, Serialize};
-use std::collections::HashSet;
+use crate::{Deserialize, Serialize, Value};
+use std::collections::{HashMap, HashSet};
+
+/// A list of events the engine can trigger.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum Event {
+    /// Input events originate from the player.
+    ///
+    /// Widgets consume input events, and (optionally) transform them to widget
+    /// events.
+    Input(Input),
+
+    /// Widget events originate from widgets.
+    ///
+    /// Plugins consume widget events and transform their state based on these
+    /// events.
+    Widget {
+        /// The name of widget to which this event belongs.
+        ///
+        /// This is used by plugins to match events against specific widgets
+        /// they own, so that events can be applied to the correct widget, if
+        /// needed.
+        name: String,
+
+        /// Details about the widget event.
+        event: Widget,
+    },
+}
+
+/// An event triggered via an input method.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum Input {
+    /// A change in pointer position.
+    Pointer(f32, f32),
+
+    /// A keyboard key event.
+    Keyboard { keys: HashSet<Key> },
+
+    /// A mouse button event.
+    Mouse(Mouse),
+}
+
+/// An event triggered via the mouse.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Mouse {
+    // TODO
+    button: (),
+}
+
+/// An event triggered by a widget.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Widget {
+    /// The name of the event the widget triggered.
+    name: String,
+
+    /// Structured data attached to an event.
+    ///
+    /// Widgets can use attributes to enrich events with contextual data. For
+    /// example, a "move" event can contain an "axis" and "amount" attribute to
+    /// signal to the plugin in which direction and for how much a widget should
+    /// be moved.
+    attributes: HashMap<String, Value>,
+}
+
+impl Widget {
+    /// Create a new widget event.
+    pub fn new(name: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            attributes: HashMap::default(),
+        }
+    }
+
+    /// Get the name of the event.
+    #[must_use]
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// Get a structured attribute attached to a widget event.
+    pub fn attribute(&self, key: impl Into<String>) -> Option<&Value> {
+        self.attributes.get(&key.into())
+    }
+
+    /// Add a new attribute to the event.
+    pub fn add_attribute<T: serde::ser::Serialize>(&mut self, key: impl Into<String>, value: T) {
+        let value = serde_json::to_value(value).expect("TODO");
+        self.attributes.insert(key.into(), value);
+    }
+}
 
 /// A list of keyboard keys supported by the engine.
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Key {
-    W,
+    // letter keys
     A,
-    S,
+    B,
     D,
-    Shift,
-    Ctrl,
-}
+    E,
+    G,
+    Q,
+    R,
+    S,
+    W,
 
-/// A list of events the engine can trigger.
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub enum Event {
-    Keyboard(HashSet<Key>),
-    Mouse,
+    // other keys
+    Minus,
+    Plus,
+
+    // modifier keys
+    Ctrl,
+    Shift,
 }

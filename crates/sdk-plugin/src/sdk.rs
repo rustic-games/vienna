@@ -1,9 +1,13 @@
-use common::{Canvas, Event, PluginState, StateTransfer, Value, Widget};
+use common::{Canvas, Event, PluginState, StateTransfer, Value, WidgetWithPosition};
 use std::collections::HashMap;
 
 pub struct Data {
     pub sdk: Sdk,
     pub state: State,
+    // TODO:
+    //
+    // Move events into `sdk`, and have it expose helper methods to get events
+    // of a named widget, or get a slice of all available events.
     pub events: Vec<Event>,
 }
 
@@ -54,7 +58,7 @@ impl State {
     }
 
     /// Get a mutable reference to a widget owned by this plugin.
-    pub fn get_widget_mut(&mut self, key: impl Into<String>) -> Option<&mut Widget> {
+    pub fn get_widget_mut(&mut self, key: impl Into<String>) -> Option<&mut WidgetWithPosition> {
         self.updated = true;
 
         self.owned.get_widget_mut(&key.into())
