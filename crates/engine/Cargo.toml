@@ -25,6 +25,7 @@ once_cell = { version = "1.4.0", optional = true }
 thiserror = "1.0"
 walkdir = "2.3"
 wasmtime = { version = "0.16", default-features = false }
+wasmtime-wasi = { version = "0.16", default-features = false }
 
 # - https://github.com/hecrj/coffee/pull/128
 # - https://github.com/hecrj/coffee/pull/129

@@ -542,6 +542,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "cpu-time"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e9e393a7668fe1fad3075085b86c781883000b4ede868f43627b34a87c8b7ded"
+dependencies = [
+ "libc",
+ "winapi 0.3.8",
+]
+
+[[package]]
 name = "cranelift-bforest"
 version = "0.63.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -687,6 +697,15 @@ dependencies = [
  "autocfg 1.0.0",
  "cfg-if",
  "lazy_static",
+]
+
+[[package]]
+name = "cvt"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "34ac344c7efccb80cd25bc61b2170aec26f2f693fd40e765a539a1243db48c71"
+dependencies = [
+ "cfg-if",
 ]
 
 [[package]]
@@ -894,6 +913,18 @@ checksum = "8505b75b31ef7285168dd237c4a7db3c1f3e0927e7d314e670bc98e854272fe9"
 dependencies = [
  "env_logger",
  "log",
+]
+
+[[package]]
+name = "filetime"
+version = "0.2.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "affc17579b132fc2461adf7c575cc6e8b134ebca52c51f5411388965227dc695"
+dependencies = [
+ "cfg-if",
+ "libc",
+ "redox_syscall",
+ "winapi 0.3.8",
 ]
 
 [[package]]
@@ -1303,6 +1334,15 @@ dependencies = [
  "log",
  "plain",
  "scroll",
+]
+
+[[package]]
+name = "heck"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "20564e78d53d2bb135c343b3f47714a56af2061f1c928fdb541dc7b9fdd94205"
+dependencies = [
+ "unicode-segmentation",
 ]
 
 [[package]]
@@ -2962,6 +3002,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "373c8a200f9e67a0c95e62a4f52fbf80c23b4381c05a17845531982fa99e6b33"
 
 [[package]]
+name = "unicode-segmentation"
+version = "1.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e83e153d1053cbb5a118eeff7fd5be06ed99153f00dbcd8ae310c5fb2b22edc0"
+
+[[package]]
 name = "unicode-xid"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3013,6 +3059,7 @@ dependencies = [
  "vienna-common",
  "walkdir",
  "wasmtime",
+ "wasmtime-wasi",
 ]
 
 [[package]]
@@ -3054,6 +3101,28 @@ name = "wasi"
 version = "0.9.0+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cccddf32554fecc6acb585f82a32a72e28b48f8c4c1883ddfeeeaa96f7d8e519"
+
+[[package]]
+name = "wasi-common"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c36197fe20e0a0673f346064a57122ee63a10c7e4da84d014ce8e97e7dd666c"
+dependencies = [
+ "anyhow",
+ "cfg-if",
+ "cpu-time",
+ "filetime",
+ "getrandom",
+ "lazy_static",
+ "libc",
+ "log",
+ "thiserror",
+ "wig",
+ "wiggle",
+ "winapi 0.3.8",
+ "winx",
+ "yanix",
+]
 
 [[package]]
 name = "wasm-bindgen"
@@ -3246,6 +3315,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasmtime-wasi"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "952779cb796013af3468a865e4a07added91223eac61d18d4567f8e89be29592"
+dependencies = [
+ "anyhow",
+ "log",
+ "wasi-common",
+ "wasmtime",
+ "wasmtime-runtime",
+ "wig",
+ "wiggle",
+]
+
+[[package]]
+name = "wast"
+version = "11.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df4d67ba9266f4fcaf2e8a1afadc5e2a959e51aecc07b1ecbdf85a6ddaf08bde"
+dependencies = [
+ "leb128",
+]
+
+[[package]]
 name = "wast"
 version = "15.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3260,7 +3353,7 @@ version = "1.0.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "526d28df6c047d9f9a92d4925b98afd8d8d95b1b3aa4f13eb1306f17d1da56c4"
 dependencies = [
- "wast",
+ "wast 15.0.0",
 ]
 
 [[package]]
@@ -3383,6 +3476,55 @@ dependencies = [
 ]
 
 [[package]]
+name = "wig"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "81c465c26ea1bfda64b38ec24f8036dab5a46963e7952cd55694dbb6ace7597d"
+dependencies = [
+ "heck",
+ "proc-macro2 1.0.12",
+ "quote 1.0.4",
+ "witx",
+]
+
+[[package]]
+name = "wiggle"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba87f956932fb15ce9deaca86b94cf9695ad69be12861d009b1be626d20710c5"
+dependencies = [
+ "thiserror",
+ "wiggle-macro",
+ "witx",
+]
+
+[[package]]
+name = "wiggle-generate"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b831c66c7f0d6f5c99feef50814a24578308ff47264dca468718977404c72ee7"
+dependencies = [
+ "anyhow",
+ "heck",
+ "proc-macro2 1.0.12",
+ "quote 1.0.4",
+ "syn 1.0.18",
+ "witx",
+]
+
+[[package]]
+name = "wiggle-macro"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "91be3bbcc4c3be9c3384e93230bd2785bfa8a2c510609f879c283524229124ac"
+dependencies = [
+ "quote 1.0.4",
+ "syn 1.0.18",
+ "wiggle-generate",
+ "witx",
+]
+
+[[package]]
 name = "winapi"
 version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3482,6 +3624,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "winx"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd961a9c47fb866ee8289fa0917ac5e1c9c1145ec49572d7e434a69c7478d48a"
+dependencies = [
+ "bitflags",
+ "cvt",
+ "winapi 0.3.8",
+]
+
+[[package]]
+name = "witx"
+version = "0.8.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9cae706991db0527c4b60d87d5d0600b08f62018600315fbdb4c05d7dcd98b21"
+dependencies = [
+ "anyhow",
+ "log",
+ "thiserror",
+ "wast 11.0.0",
+]
+
+[[package]]
 name = "ws2_32-sys"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3520,6 +3685,19 @@ name = "xml-rs"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b07db065a5cf61a7e4ba64f29e67db906fb1787316516c4e6e5ff0fea1efcd8a"
+
+[[package]]
+name = "yanix"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7c9b1a7c85f9dcf48fadb129461dc1e54cdf82f6a52cb7ab3b53a4a4234d056f"
+dependencies = [
+ "bitflags",
+ "cfg-if",
+ "filetime",
+ "libc",
+ "log",
+]
 
 [[package]]
 name = "zip"

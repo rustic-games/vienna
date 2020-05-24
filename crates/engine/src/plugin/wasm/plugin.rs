@@ -14,6 +14,7 @@ use std::io::Write;
 use std::rc::Rc;
 use std::{fmt, mem};
 use wasmtime::{Caller, Extern, Func as F, Instance, Memory, Module, Store, Trap, WasmTy};
+use wasmtime_wasi::{Wasi, WasiCtx};
 
 /// A container type to wrap a Wasm module.
 pub struct Plugin {
@@ -50,10 +51,22 @@ impl Plugin {
         let registration: Rc<Cell<Option<Registration>>> = Rc::new(Cell::new(None));
         let run_result = Rc::new(Cell::new(None));
 
-        let host_functions = vec![
+        let mut host_functions = vec![
             Self::callback(store, Rc::clone(&registration)),
             Self::callback(store, Rc::clone(&run_result)),
         ];
+
+        // TODO: limit what resources the modules have access to.
+        let wasi = Wasi::new(store, WasiCtx::new(std::env::args()).expect("valid wasi"));
+        for import in module.imports() {
+            if import.module() == "wasi_snapshot_preview1" {
+                if let Some(export) = wasi.get_export(import.name()) {
+                    host_functions.push(Extern::from(export.clone()));
+                    continue;
+                }
+            }
+        }
+
         let instance = Instance::new(&module, &host_functions)?;
 
         Self::call(&instance, Func::Init)?;
