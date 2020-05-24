@@ -25,7 +25,7 @@ use engine::Engine;
 fn main() -> anyhow::Result<()> {
     Engine::builder()
         .with_plugin_path("plugins")
-        .with_window_dimensions(1440, 900)
+        .with_window_dimensions(800, 600)
         // Currently broken.
         //
         // see: https://git.io/Jfzlh
