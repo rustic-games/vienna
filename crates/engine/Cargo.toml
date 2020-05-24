@@ -12,7 +12,7 @@ edition = "2018"
 publish = false
 
 [features]
-default = ["backend-ggez"]
+default = ["backend-coffee"]
 backend-ggez = ["ggez"]
 backend-coffee = ["coffee", "once_cell"]
 
