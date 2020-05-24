@@ -1,3 +1,5 @@
+//! Widget related items.
+
 mod button_rectangle;
 mod moving_circle;
 
@@ -8,19 +10,29 @@ pub use button_rectangle::ButtonRectangle;
 pub use moving_circle::MovingCircle;
 use std::collections::HashMap;
 
+/// List of supported widget kinds.
+///
+/// The engine exposes a set of default widgets, and a "custom" widget kind
+/// which calls out to registered Wasm-based widgets.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Kind {
+    /// An example widget of a circle that can be manipulated from a plugin.
     MovingCircle,
+
+    /// A (work in progress) rectangular button.
     ButtonRectangle,
 }
 
+/// An enumeration of widgets with their respective states..
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(clippy::missing_docs_in_private_items)]
 pub enum Widget {
     MovingCircle(WidgetState),
     ButtonRectangle(WidgetState),
 }
 
 impl From<WidgetState> for Widget {
+    #[inline]
     fn from(state: WidgetState) -> Self {
         match state.kind() {
             Kind::MovingCircle => Self::MovingCircle(state),
@@ -29,15 +41,27 @@ impl From<WidgetState> for Widget {
     }
 }
 
+/// A builder used to build a new widget owned by a plugin.
 pub struct Builder {
+    /// The unique name of the widget given by the owning plugin.
     name: String,
+
+    /// The kind of widget.
     kind: Kind,
+
+    /// Whether or not the widget is rendered to the screen.
     visible: bool,
+
+    /// The position of the widget within the canvas.
     position: (f32, f32),
+
+    /// A list of attributes with which to configure the widget.
     attributes: HashMap<String, Value>,
 }
 
 impl Builder {
+    /// Create a new widget builder.
+    #[inline]
     #[must_use]
     pub fn new(name: impl Into<String>, kind: Kind) -> Self {
         Self {
@@ -49,24 +73,35 @@ impl Builder {
         }
     }
 
+    /// Add an attribute to the widget configuration.
+    #[inline]
     #[must_use]
     pub fn attribute(mut self, key: impl Into<String>, value: impl Into<Value>) -> Self {
         self.attributes.insert(key.into(), value.into());
         self
     }
 
+    /// Set the widget as hidden.
+    ///
+    /// This will prevent the widget from being rendered to the screen.
+    #[inline]
     #[must_use]
     pub const fn hidden(mut self) -> Self {
         self.visible = false;
         self
     }
 
+    /// Set the initial position of the widget on the canvas.
+    #[inline]
     #[must_use]
     pub const fn position(mut self, x: f32, y: f32) -> Self {
         self.position = (x, y);
         self
     }
 
+    /// Finalize building the widget and get back a tuple of the name of the
+    /// widget and the widget itself.
+    #[inline]
     #[must_use]
     pub fn build(self) -> (String, WidgetWithPosition) {
         let widget = WidgetState::new(self.kind, self.attributes);
@@ -78,6 +113,9 @@ impl Builder {
     }
 }
 
+/// The widget runtime trait.
+///
+/// This trait allows all widgets to be generic and act in a similar manner.
 pub trait Runtime {
     /// Get the value of an attribute of this widget.
     ///
@@ -121,6 +159,7 @@ pub trait Runtime {
     /// "triggered" widget event as output.
     ///
     /// By default a widget is non-interactive.
+    #[inline]
     #[allow(unused)]
     fn interact(&mut self, event: &Event) -> Vec<event::Widget> {
         vec![]

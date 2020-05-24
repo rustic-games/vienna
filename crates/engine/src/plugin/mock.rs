@@ -1,3 +1,5 @@
+//! A mock implementation of the plugin system used for testing.
+
 mod error;
 mod manager;
 mod plugin;

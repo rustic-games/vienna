@@ -1,3 +1,5 @@
+//! Events used to communicate between player, plugin and widget.
+
 use crate::{Deserialize, Serialize, Value};
 use std::collections::{HashMap, HashSet};
 
@@ -34,7 +36,10 @@ pub enum Input {
     Pointer(f32, f32),
 
     /// A keyboard key event.
-    Keyboard { keys: HashSet<Key> },
+    Keyboard {
+        /// A set of keys captured in the input event.
+        keys: HashSet<Key>,
+    },
 
     /// A mouse button event.
     Mouse(Mouse),
@@ -43,7 +48,7 @@ pub enum Input {
 /// An event triggered via the mouse.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Mouse {
-    // TODO
+    /// TODO
     button: (),
 }
 
@@ -64,6 +69,7 @@ pub struct Widget {
 
 impl Widget {
     /// Create a new widget event.
+    #[inline]
     pub fn new(name: impl Into<String>) -> Self {
         Self {
             name: name.into(),
@@ -72,25 +78,32 @@ impl Widget {
     }
 
     /// Get the name of the event.
+    #[inline]
     #[must_use]
     pub fn name(&self) -> &str {
         &self.name
     }
 
     /// Get a structured attribute attached to a widget event.
+    #[inline]
     pub fn attribute(&self, key: impl Into<String>) -> Option<&Value> {
         self.attributes.get(&key.into())
     }
 
     /// Add a new attribute to the event.
+    #[inline]
     pub fn add_attribute<T: serde::ser::Serialize>(&mut self, key: impl Into<String>, value: T) {
-        let value = serde_json::to_value(value).expect("TODO");
-        self.attributes.insert(key.into(), value);
+        #[allow(clippy::match_wild_err_arm)]
+        match serde_json::to_value(value) {
+            Ok(value) => self.attributes.insert(key.into(), value),
+            Err(_) => todo!("logging"),
+        };
     }
 }
 
 /// A list of keyboard keys supported by the engine.
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[allow(clippy::missing_docs_in_private_items)]
 pub enum Key {
     // letter keys
     A,

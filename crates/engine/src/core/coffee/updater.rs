@@ -1,8 +1,12 @@
+//! The updater implementation for the coffee core.
+
 use crate::{config, error, plugin::Handler, widget};
 use common::{Canvas, Event, GameState};
 
+/// Handles updating the game state.
 #[derive(Debug)]
 pub struct Updater {
+    /// The configuration of the updater.
     pub(crate) config: config::Updater,
 
     /// A list of events that are currently active. This list is updated when
@@ -16,6 +20,7 @@ pub struct Updater {
 }
 
 impl Updater {
+    /// Update the game state.
     pub fn run(
         &mut self,
         state: &mut GameState,

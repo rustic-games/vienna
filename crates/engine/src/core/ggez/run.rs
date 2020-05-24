@@ -16,6 +16,7 @@ use ggez::{
 };
 use std::{collections::HashSet, path::Path};
 
+/// Run the ggez core.
 #[allow(clippy::cast_precision_loss)]
 pub fn run(mut engine: Engine) -> Result<(), Error> {
     let window_setup = WindowSetup {
@@ -46,14 +47,19 @@ pub fn run(mut engine: Engine) -> Result<(), Error> {
         audio: true,
     };
 
-    let (mut ctx, mut event_loop) = ContextBuilder::new("Vienna", "")
+    let result = ContextBuilder::new("Vienna", "")
         .window_setup(window_setup)
         .window_mode(window_mode)
         .modules(modules)
         .with_conf_file(false)
         .add_resource_path(Path::new("./resources"))
-        .build()
-        .expect("TODO");
+        .build();
+
+    #[allow(clippy::match_wild_err_arm)]
+    let (mut ctx, mut event_loop) = match result {
+        Ok(result) => result,
+        Err(_) => todo!("logging"),
+    };
 
     ggez::event::run(&mut ctx, &mut event_loop, &mut engine).map_err(Into::into)
 }

@@ -1,3 +1,5 @@
+//! A moving circle.
+
 use crate::{
     event, widget, Color, Component, Deserialize, Event, Key, Serialize, Shape, Value, WidgetState,
 };
@@ -22,21 +24,28 @@ use std::{
 /// - The `-` and `+` keys modify the circle's opacity.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct MovingCircle {
+    /// The radius of the circle.
     radius: f32,
+
+    /// The color of the circle.
     color: Color,
 
     // keeps track of whether or not the color shifting is going up or down.
     //
     // This allows a single key to continuously shift the color space without
     // any jarring jumps from high to low at the boundaries.
+    /// (r)ed tint up/down
     r_up: bool,
+    /// (g)reen tint up/down
     g_up: bool,
+    /// (b)lue tint up/down
     b_up: bool,
 }
 
 /// The direction in which the widget wants to be moved by its owner, based on
 /// the incoming key events.
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[allow(clippy::missing_docs_in_private_items)]
 enum Direction {
     Up,
     Down,
@@ -47,6 +56,7 @@ enum Direction {
 /// The speed at which the widget wants to be moved by its owner, based on the
 /// incoming key events.
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[allow(clippy::missing_docs_in_private_items)]
 enum Speed {
     Normal,
     Fast,
@@ -56,6 +66,7 @@ enum Speed {
 impl MovingCircle {
     /// Resize the circle based on the provided key.
     fn resize(&mut self, step: f32, key: Key) -> Option<event::Widget> {
+        #[allow(clippy::wildcard_enum_match_arm)]
         match key {
             Key::Q => self.radius = 0.0_f32.max(self.radius - step),
             Key::E => self.radius = std::f32::MAX.min(self.radius + step),
@@ -67,6 +78,7 @@ impl MovingCircle {
 
     /// Shift the circle color based on the provided key.
     fn shift_color(&mut self, mut step: f32, key: Key) -> Option<event::Widget> {
+        #[allow(clippy::wildcard_enum_match_arm)]
         let (up, color) = match key {
             Key::R => (&mut self.r_up, &mut self.color.r),
             Key::G => (&mut self.g_up, &mut self.color.g),
@@ -102,6 +114,7 @@ impl MovingCircle {
 
     /// Shift the circle alpha based on the provided key.
     fn shift_alpha(&mut self, step: f32, key: Key) -> Option<event::Widget> {
+        #[allow(clippy::wildcard_enum_match_arm)]
         match key {
             Key::Plus => self.color.a = 1.0_f32.min(self.color.a + step),
             Key::Minus => self.color.a = 0.0_f32.max(self.color.a - step),
@@ -113,42 +126,56 @@ impl MovingCircle {
 }
 
 impl widget::Runtime for MovingCircle {
+    #[inline]
     fn attribute(&self, key: &str) -> Option<Value> {
+        #[allow(clippy::wildcard_enum_match_arm)]
         match key {
             "radius" => Some(self.radius.into()),
-            "color" => Some(serde_json::to_value(self.color).expect("TODO")),
+            "color" => Some(self.color.into()),
             _ => None,
         }
     }
 
+    #[inline]
+    #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
     fn attribute_mut(&mut self, key: &str, cb: fn(value: Option<&mut Value>)) {
+        #[allow(clippy::clippy::wildcard_enum_match_arm)]
         match key {
             "radius" => {
                 let mut value = Value::from(self.radius);
                 cb(Some(&mut value));
 
-                #[allow(clippy::cast_possible_truncation)]
-                let radius = value.as_f64().expect("TODO") as f32;
-                self.radius = radius;
+                match value.as_f64() {
+                    Some(radius) => self.radius = radius as f32,
+                    None => todo!("logging"),
+                }
             }
             "color" => {
                 let mut value = serde_json::to_value(self.color).ok();
                 cb(value.as_mut());
 
-                if let Some(value) = value {
-                    self.color = serde_json::from_value(value).expect("TODO");
+                #[allow(clippy::match_wild_err_arm)]
+                match value {
+                    Some(value) => match serde_json::from_value(value) {
+                        Ok(color) => self.color = color,
+                        Err(_) => todo!("logging"),
+                    },
+
+                    None => todo!("logging"),
                 }
             }
             _ => cb(None),
         }
     }
 
+    #[inline]
     fn dimensions(&self) -> (f32, f32) {
         let diameter = self.radius * 2.0;
 
         (diameter, diameter)
     }
 
+    #[inline]
     fn state(&self) -> WidgetState {
         let mut state = HashMap::with_capacity(5);
 
@@ -161,6 +188,7 @@ impl widget::Runtime for MovingCircle {
         WidgetState::new(widget::Kind::MovingCircle, state)
     }
 
+    #[inline]
     fn interact(&mut self, event: &Event) -> Vec<event::Widget> {
         let mut output = vec![];
 
@@ -183,6 +211,7 @@ impl widget::Runtime for MovingCircle {
         output
     }
 
+    #[inline]
     fn render(&self) -> Vec<Component> {
         let shape = Shape::Circle {
             radius: self.radius,
@@ -209,6 +238,7 @@ fn move_event(key: Key, modifiers: &HashSet<Key>) -> Option<event::Widget> {
         _ => Speed::Normal,
     };
 
+    #[allow(clippy::wildcard_enum_match_arm)]
     let direction = match key {
         Key::W => Direction::Up,
         Key::S => Direction::Down,
@@ -227,8 +257,9 @@ fn move_event(key: Key, modifiers: &HashSet<Key>) -> Option<event::Widget> {
 impl TryFrom<&WidgetState> for MovingCircle {
     type Error = String;
 
+    #[inline]
     fn try_from(state: &WidgetState) -> Result<Self, Self::Error> {
-        #[allow(clippy::cast_possible_truncation)]
+        #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
         let radius = state
             .get("radius")
             .ok_or("missing `radius` attribute")?

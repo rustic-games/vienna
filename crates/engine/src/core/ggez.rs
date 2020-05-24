@@ -1,3 +1,5 @@
+//! The "ggez" game engine core.
+
 mod renderer;
 mod run;
 mod updater;

@@ -1,12 +1,24 @@
+//! The renderer implementation for the coffee core.
+
 use crate::{config, widget};
 use coffee::graphics::{self, Frame, Mesh, Point};
 use common::{Color, Component, GameState, Shape};
 use std::time::Instant;
 
+/// Handles rendering frames to the screen.
 #[derive(Debug)]
 pub struct Renderer {
+    /// The configuration of the renderer.
     config: config::Renderer,
+
+    /// A cache of the timestamp the last step finished.
+    ///
+    /// This is used to adhere to any configured FPS limits.
     last_step_timestamp: Instant,
+
+    /// A cache based off the FPS configuration.
+    ///
+    /// This is used to adhere to any configured FPS limits.
     minimum_nanoseconds_between_renders: u64,
 }
 
@@ -28,7 +40,7 @@ impl Renderer {
 
         let last_step_duration = self.last_step_timestamp.elapsed();
 
-        #[allow(clippy::cast_possible_truncation)]
+        #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
         let last_step_nanoseconds = last_step_duration.as_nanos() as u64;
 
         last_step_nanoseconds >= self.minimum_nanoseconds_between_renders
@@ -91,7 +103,22 @@ fn render_component(frame: &mut Frame<'_>, component: &Component, (mut x, mut y)
 
             (shape, color)
         }
-        _ => todo!(),
+        Shape::Rectangle {
+            width,
+            height,
+            color,
+        } => {
+            let rect = graphics::Rectangle {
+                x,
+                y,
+                width,
+                height,
+            };
+
+            let shape = graphics::Shape::Rectangle(rect);
+
+            (shape, color)
+        }
     };
 
     let mut mesh = Mesh::new();
@@ -100,7 +127,7 @@ fn render_component(frame: &mut Frame<'_>, component: &Component, (mut x, mut y)
 }
 
 /// Convert our color struct to Coffee's one.
-fn into_color(color: Color) -> graphics::Color {
+const fn into_color(color: Color) -> graphics::Color {
     let Color { r, g, b, a } = color;
     graphics::Color { r, g, b, a }
 }
@@ -108,6 +135,7 @@ fn into_color(color: Color) -> graphics::Color {
 impl From<config::Renderer> for Renderer {
     fn from(config: config::Renderer) -> Self {
         let minimum_nanoseconds_between_renders = match config.max_frames_per_second {
+            #[allow(clippy::integer_division, clippy::integer_arithmetic)]
             Some(fps) => 1_000_000_000 / u64::from(fps),
             None => 0,
         };

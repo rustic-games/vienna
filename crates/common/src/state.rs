@@ -1,3 +1,5 @@
+//! All state tracked by the engine.
+
 use crate::{widget, Canvas, Deserialize, Event, Serialize, Value};
 use std::collections::HashMap;
 
@@ -12,27 +14,32 @@ use std::collections::HashMap;
 /// state of other plugins) reference to the relevant state objects.
 #[derive(Debug, Default)]
 pub struct Game {
+    /// The internal game state (segregated by plugin).
     state: HashMap<String, Plugin>,
 }
 
 impl Game {
     /// Register the state of a plugin.
+    #[inline]
     pub fn register_plugin_state(&mut self, plugin: impl Into<String>, state: Plugin) {
         self.state.insert(plugin.into(), state);
     }
 
     /// Get an immutable reference to the state of a plugin.
+    #[inline]
     pub fn get(&self, plugin: impl Into<String>) -> Option<&Plugin> {
         self.state.get(&plugin.into())
     }
 
     /// Get a mutable reference to the state of a plugin.
+    #[inline]
     pub fn get_mut(&mut self, plugin: impl Into<String>) -> Option<&mut Plugin> {
         self.state.get_mut(&plugin.into())
     }
 
     /// Get immutable references to all widgets (and their positions) managed by
     /// plugins.
+    #[inline]
     #[must_use]
     pub fn widgets(&self) -> Vec<&WidgetWithPosition> {
         let mut widgets = vec![];
@@ -52,6 +59,7 @@ impl Game {
     /// the widget belongs to. This is relevant for when we track plugin events
     /// and send them to a plugin, as the plugin might want to know which widget
     /// the event originated from.
+    #[inline]
     #[must_use]
     pub fn widgets_mut(&mut self) -> Vec<(&str, &mut WidgetWithPosition)> {
         let mut widgets = vec![];
@@ -68,15 +76,18 @@ impl Game {
 /// The state of a plugin.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Plugin {
+    /// The state of the plugin.
     #[serde(rename = "s")]
     state: HashMap<String, Value>,
 
+    /// A list of (named) widgets owned by the plugin.
     #[serde(rename = "w")]
     widgets: HashMap<String, WidgetWithPosition>,
 }
 
 impl Plugin {
     /// Create a new plugin state object.
+    #[inline]
     #[must_use]
     pub fn new(
         state: HashMap<impl Into<String>, impl Into<Value>>,
@@ -93,17 +104,20 @@ impl Plugin {
     }
 
     /// Get an immutable reference to a state value.
+    #[inline]
     pub fn get(&self, key: impl Into<String>) -> Option<&Value> {
         self.state.get(&key.into())
     }
 
     /// Get a mutable reference to a state value.
+    #[inline]
     pub fn get_mut(&mut self, key: impl Into<String>) -> Option<&mut Value> {
         self.state.get_mut(&key.into())
     }
 
     /// Get a mutable reference to a widget (and its position) owned by the
     /// plugin.
+    #[inline]
     pub fn get_widget_mut(&mut self, key: impl Into<String>) -> Option<&mut WidgetWithPosition> {
         self.widgets.get_mut(&key.into())
     }
@@ -133,6 +147,7 @@ pub struct WidgetWithPosition {
 
 impl WidgetWithPosition {
     /// Create a new widget at the given position.
+    #[inline]
     #[must_use]
     pub const fn new(coordinates: (f32, f32), visible: bool, widget: Widget) -> Self {
         Self {
@@ -143,29 +158,34 @@ impl WidgetWithPosition {
     }
 
     /// Get the widget coordinates on the canvas.
+    #[inline]
     #[must_use]
     pub const fn coordinates(&self) -> (f32, f32) {
         self.coordinates
     }
 
     /// Set the coordinates of the widget.
+    #[inline]
     pub fn set_coordinates(&mut self, x: f32, y: f32) {
         self.coordinates = (x, y);
     }
 
     /// Is the widget visible or not.
+    #[inline]
     #[must_use]
     pub const fn is_visible(&self) -> bool {
         self.visible
     }
 
     /// Get an immutable reference to the widget.
+    #[inline]
     #[must_use]
     pub const fn widget(&self) -> &Widget {
         &self.widget
     }
 
     /// Get a mutable reference to the widget.
+    #[inline]
     pub fn widget_mut(&mut self) -> &mut Widget {
         &mut self.widget
     }
@@ -197,6 +217,7 @@ pub struct Widget {
 
 impl Widget {
     /// Create a new widget state object.
+    #[inline]
     #[must_use]
     pub fn new(kind: widget::Kind, state: HashMap<impl Into<String>, Value>) -> Self {
         Self {
@@ -206,17 +227,20 @@ impl Widget {
     }
 
     /// Get the widget kind to which this state belongs.
+    #[inline]
     #[must_use]
     pub const fn kind(&self) -> &widget::Kind {
         &self.kind
     }
 
     /// Get an immutable reference to a state value.
+    #[inline]
     pub fn get(&self, key: impl Into<String>) -> Option<&Value> {
         self.state.get(&key.into())
     }
 
     /// Get a mutable reference to a state value.
+    #[inline]
     pub fn get_mut(&mut self, key: impl Into<String>) -> Option<&mut Value> {
         self.state.get_mut(&key.into())
     }
@@ -229,12 +253,19 @@ impl Widget {
 /// serialized and deserialized when moving across FFI boundaries.
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Transfer {
+    /// The data owned by the plugin itself.
     #[serde(rename = "o")]
     pub owned: Plugin,
+
+    /// Read-only data of other plugins this plugin subscribed to.
     #[serde(rename = "b")]
     pub borrowed: HashMap<String, Plugin>,
+
+    /// A list of events gathered by the engine upon which the plugin may act.
     #[serde(rename = "e")]
     pub events: Vec<Event>,
+
+    /// Details about the canvas.
     #[serde(rename = "c")]
     pub canvas: Canvas,
 }
@@ -247,8 +278,14 @@ impl Transfer {
     ///
     /// This requires `ptr` to point to the correct pointer, and `len` to be the
     /// correct length of the Vec.
+    #[inline]
     pub unsafe fn from_raw(ptr: *mut u8, len: usize) -> Self {
         let vec = Vec::from_raw_parts(ptr, len, len);
-        serde_json::from_slice(&vec).expect("valid pointer")
+
+        #[allow(clippy::match_wild_err_arm)]
+        match serde_json::from_slice(&vec) {
+            Ok(value) => value,
+            Err(_) => todo!("logging"),
+        }
     }
 }

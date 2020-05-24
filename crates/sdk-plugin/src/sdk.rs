@@ -1,9 +1,19 @@
+//! Types used to convert and expose SDK functionality.
+
 use common::{Canvas, Event, PluginState, StateTransfer, Value, WidgetWithPosition};
 use std::collections::HashMap;
 
+/// A data container used to unwrap data transfered from the engine to the
+/// plugin.
 pub struct Data {
+    /// Provides access to top-level SDK helper methods.
     pub sdk: Sdk,
+
+    /// The state of the plugin as reported by the engine.
     pub state: State,
+
+    /// The events reported by the engine to have been emitted since this plugin
+    /// last ran.
     // TODO:
     //
     // Move events into `sdk`, and have it expose helper methods to get events
@@ -12,6 +22,7 @@ pub struct Data {
 }
 
 impl From<StateTransfer> for Data {
+    #[inline]
     fn from(transfer: StateTransfer) -> Self {
         let StateTransfer {
             owned,
@@ -31,6 +42,7 @@ impl From<StateTransfer> for Data {
     }
 }
 
+/// The state of the plugin.
 pub struct State {
     /// The state of this plugin, which the plugin is allowed to mutate.
     pub(super) owned: PluginState,
@@ -46,11 +58,13 @@ pub struct State {
 
 impl State {
     /// Get an immutable reference to a value owned by this plugin.
+    #[inline]
     pub fn get(&self, key: impl Into<String>) -> Option<&Value> {
         self.owned.get(&key.into())
     }
 
     /// Get a mutable reference to a value owned by this plugin.
+    #[inline]
     pub fn get_mut(&mut self, key: impl Into<String>) -> Option<&mut Value> {
         self.updated = true;
 
@@ -58,6 +72,7 @@ impl State {
     }
 
     /// Get a mutable reference to a widget owned by this plugin.
+    #[inline]
     pub fn get_widget_mut(&mut self, key: impl Into<String>) -> Option<&mut WidgetWithPosition> {
         self.updated = true;
 
@@ -65,17 +80,21 @@ impl State {
     }
 
     /// Get an immutable reference to the state of another plugin.
+    #[inline]
     pub fn plugin(&self, name: impl Into<String>) -> Option<&PluginState> {
         self.borrowed.get(&name.into())
     }
 }
 
+/// The top-level SDK helper struct.
 pub struct Sdk {
+    /// The game screen canvas.
     canvas: Canvas,
 }
 
 impl Sdk {
     /// Get details about the window canvas.
+    #[inline]
     #[must_use]
     pub const fn canvas(&self) -> Canvas {
         self.canvas

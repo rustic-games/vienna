@@ -1,3 +1,5 @@
+//! The main engine implementation.
+
 use crate::{
     config,
     core::{Renderer, Updater},
@@ -6,6 +8,7 @@ use crate::{
 };
 use common::GameState;
 
+/// The top-level object that holds all the configuration, state, and logic.
 #[derive(Debug)]
 pub struct Engine {
     /// The global engine configuration.
@@ -39,10 +42,12 @@ impl Default for Engine {
 }
 
 impl Engine {
+    /// Get a new builder to create a new engine instance.
     pub fn builder() -> Builder {
         Builder::default()
     }
 
+    /// Run the engine to completion or until an error occurs.
     pub fn run(self) -> Result<(), Error> {
         crate::core::run(self)
     }

@@ -1,3 +1,5 @@
+//! A mock plugin implementation.
+
 use crate::error;
 use crate::plugin::Runtime;
 use common::{Canvas, Event, GameState};
@@ -5,13 +7,16 @@ use common::{Canvas, Event, GameState};
 /// A mock plugin implementation
 #[derive(Debug, Default)]
 pub struct Plugin {
+    /// The amount of times this plugin "ran" (mocked).
     pub(crate) runs: usize,
+
+    /// The state of the game.
     pub(crate) game_state: GameState,
 }
 
 impl Runtime for Plugin {
     fn run(&mut self, _: &mut GameState, _: Canvas, _: &[Event]) -> Result<(), error::Runtime> {
-        self.runs += 1;
+        self.runs = self.runs.saturating_add(1);
 
         Ok(())
     }
@@ -26,6 +31,7 @@ impl Runtime for Plugin {
 }
 
 #[cfg(test)]
+#[allow(clippy::restriction)]
 mod tests {
     use super::*;
 

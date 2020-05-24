@@ -1,3 +1,5 @@
+//! Wasm errors.
+
 use crate::plugin::Func;
 use anyhow::Error;
 use common::serde_json;
@@ -8,6 +10,7 @@ use wasmtime::Trap;
 
 /// `WasmRuntime` related errors.
 #[derive(Debug, Error)]
+#[allow(clippy::missing_docs_in_private_items)]
 pub enum Runtime {
     #[error("missing exported `{0}` function")]
     MissingExportedFunction(Func),
@@ -71,6 +74,7 @@ impl From<anyhow::Error> for Runtime {
 
 /// `WasmPlugin` related errors.
 #[derive(Debug, Error)]
+#[allow(clippy::missing_docs_in_private_items)]
 pub enum Handler {
     #[error("inaccessible wasm module `{path}` ({kind:?})")]
     Io { path: PathBuf, kind: io::ErrorKind },

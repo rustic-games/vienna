@@ -1,3 +1,5 @@
+//! Wasm-based plugin logic.
+
 use super::RuntimeError;
 use crate::{
     error,
@@ -41,6 +43,7 @@ pub struct Plugin {
 }
 
 impl Plugin {
+    /// Create a new wasm plugin.
     pub(super) fn new(
         store: &Store,
         game_state: &mut GameState,
@@ -57,7 +60,13 @@ impl Plugin {
         ];
 
         // TODO: limit what resources the modules have access to.
-        let wasi = Wasi::new(store, WasiCtx::new(std::env::args()).expect("valid wasi"));
+        #[allow(clippy::match_wild_err_arm)]
+        let ctx = match WasiCtx::new(std::env::args()) {
+            Ok(ctx) => ctx,
+            Err(_) => todo!("logging"),
+        };
+
+        let wasi = Wasi::new(store, ctx);
         for import in module.imports() {
             if import.module() == "wasi_snapshot_preview1" {
                 if let Some(export) = wasi.get_export(import.name()) {
@@ -71,7 +80,10 @@ impl Plugin {
 
         Self::call(&instance, Func::Init)?;
 
-        let mut registration: Registration = registration.take().expect("must exist");
+        let mut registration: Registration = match registration.take() {
+            Some(registration) => registration,
+            None => todo!("logging"),
+        };
 
         if registration.name.is_empty() {
             return Err(RuntimeError::MissingName);
@@ -99,6 +111,7 @@ impl Plugin {
         })
     }
 
+    /// Call into the wasm instance for a given function that takes no arguments.
     fn call(instance: &Instance, func: Func) -> Result<(), RuntimeError> {
         let call = instance
             .get_func(&func.to_string())
@@ -111,6 +124,7 @@ impl Plugin {
         Ok(())
     }
 
+    /// Call into the wasm instance for a given function that takes one argument.
     fn call1<T: WasmTy>(instance: &Instance, func: Func, value: i32) -> Result<T, RuntimeError> {
         let call = instance
             .get_func(&func.to_string())
@@ -123,6 +137,7 @@ impl Plugin {
         Ok(value)
     }
 
+    /// Call into the wasm instance for a given function that takes two arguments.
     fn call2<T: WasmTy>(
         instance: &Instance,
         func: Func,
@@ -140,12 +155,17 @@ impl Plugin {
         Ok(value)
     }
 
+    /// An implementation of an engine function that is called by the plugin
+    /// with a pointer at which the engine is expected to find a specific type.
+    ///
+    /// The function fetches that type, and stores it in a reference-counted
+    /// cell.
     fn callback<T: std::fmt::Debug + DeserializeOwned + 'static>(
         store: &Store,
         ptr: Rc<Cell<Option<T>>>,
     ) -> Extern {
         F::wrap(store, move |caller: Caller<'_>, pos: i32, len: i32| {
-            let memory = match Self::get_memory(&caller) {
+            let mut memory = match Self::get_memory(&caller) {
                 Ok(mem) => mem,
                 Err(err) => return Err(Trap::new(err.to_string())),
             };
@@ -156,10 +176,8 @@ impl Plugin {
             //
             // See: https://docs.rs/wasmtime/0.16.0/wasmtime/struct.Memory.html#memory-and-safety
             let data = unsafe {
-                let data = memory.data_unchecked();
-
-                #[allow(clippy::cast_sign_loss)]
-                let slice = &data[pos as usize..(len as usize + pos as usize)];
+                #[allow(clippy::as_conversions, clippy::cast_sign_loss)]
+                let slice = get_data(&mut memory, pos as usize, len as usize);
 
                 match serde_json::from_slice(slice) {
                     Ok(value) => value,
@@ -174,7 +192,9 @@ impl Plugin {
         .into()
     }
 
+    /// Get the live memory address of the wasm plugin instance.
     fn get_memory(caller: &Caller<'_>) -> Result<Memory, RuntimeError> {
+        #[allow(clippy::match_wild_err_arm, clippy::wildcard_enum_match_arm)]
         match caller.get_export("memory") {
             Some(Extern::Memory(mem)) => Ok(mem),
             _ => Err(RuntimeError::MemoryAccess),
@@ -225,12 +245,17 @@ impl Runtime for Plugin {
         let offset: i32 = Self::call1(&self.instance, Func::Malloc, vec_size)?;
         let offset_size: usize = offset.try_into().map_err(RuntimeError::from)?;
 
-        let memory = self.instance.get_memory("memory").expect("valid memory");
+        let mut memory = match self.instance.get_memory("memory") {
+            Some(mem) => mem,
+            None => todo!("logging"),
+        };
 
         unsafe {
-            let data = memory.data_unchecked_mut();
-            let mut slice = &mut data[offset_size..(offset_size + vec.len())];
-            slice.write_all(&vec).expect("TODO");
+            let mut slice = get_data(&mut memory, offset_size, vec.len());
+
+            if slice.write_all(&vec).is_err() {
+                todo!("logging")
+            }
         }
 
         Self::call2(&self.instance, Func::Run, offset, vec_size)?;
@@ -266,7 +291,30 @@ impl Runtime for Plugin {
     }
 }
 
+/// Given an instance of wasm memory, a position in that memory and the length
+/// of the memory chunk, return whatever bytes are stored at this address.
+///
+/// # Safety
+///
+/// This expects all three provided values to be correct.
+unsafe fn get_data(memory: &mut Memory, pos: usize, len: usize) -> &mut [u8] {
+    let data = memory.data_unchecked_mut();
+
+    #[allow(clippy::as_conversions, clippy::cast_sign_loss)]
+    let total_len = match pos.checked_add(len) {
+        Some(len) => len,
+        None => todo!("logging"),
+    };
+
+    #[allow(clippy::cast_sign_loss, clippy::as_conversions)]
+    match data.get_mut(pos..total_len) {
+        Some(slice) => slice,
+        None => todo!("logging"),
+    }
+}
+
 #[cfg(test)]
+#[allow(clippy::restriction)]
 pub(super) mod tests {
     use super::*;
 

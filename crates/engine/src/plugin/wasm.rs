@@ -1,3 +1,5 @@
+//! Wasm plugin system implementation details.
+
 mod error;
 mod manager;
 mod plugin;

@@ -1,3 +1,5 @@
+//! The main way to create a valid game engine instance.
+
 use crate::{
     config,
     error::Builder as Error,
@@ -22,13 +24,21 @@ use std::{mem, path::PathBuf};
 /// ```
 #[derive(Debug, Default)]
 pub struct Builder {
+    /// A list of paths in which to search for wasm plugins.
     plugin_paths: Vec<PathBuf>,
+
+    /// The state of a game (e.g. a saved game state)
     game_state: GameState,
+
+    /// The maximum number of frames per second to run the game at.
     maximum_fps: Option<u16>,
 
     // These are exported so that the `coffee` core's `run` function has access
     // to the values when creating a new window.
+    /// Details about the canvas of the game.
     pub(crate) canvas: Canvas,
+
+    /// Whether or not to enable vsync.
     pub(crate) vsync_enabled: bool,
 }
 
@@ -48,6 +58,7 @@ impl Builder {
     /// Use an existing game state.
     ///
     /// This can be used to resume an active game session.
+    #[allow(clippy::missing_const_for_fn)]
     pub fn with_game_state(mut self, game_state: GameState) -> Self {
         self.game_state = game_state;
         self
@@ -98,43 +109,50 @@ impl Builder {
         self.build_inner()
     }
 
-    // FIXME: this is a temporary solution until a better one is found.
-    //
-    // Since `coffee` must initialize the `Engine` by itself, we have to somehow
-    // provide it with the configuration set in this builder.
-    //
-    // See: https://github.com/hecrj/coffee/issues/72
-    //
-    // For now, this is done through a mutable static variable that is set once
-    // in the builder, and then consumed when starting the engine.
-    //
-    // Ideally the builder:
-    //
-    // 1. Is engine agnostic and doesn't need any conditional compilation.
-    // 2. Does not need unsafe code and a global mutable variable to function.
-    //
-    // The current path to starting the coffee engine is:
-    //
-    // - Use builder and trigger `build`
-    //   - Store builder in global variable
-    //   - Return engine with default configuration
-    // - Use engine's `start` method
-    //   - Run coffee::run
-    //      - Fetch window config from global builder
-    //   - Run coffee's Game::load
-    //   - Load global builder
-    //   - Construct new builder with global config
-    //   - Call `build_inner` to create engine
-    //   - Start engine
-    //
+    /// FIXME: this is a temporary solution until a better one is found.
+    ///
+    /// Since `coffee` must initialize the `Engine` by itself, we have to somehow
+    /// provide it with the configuration set in this builder.
+    ///
+    /// See: <https://github.com/hecrj/coffee/issues/72>
+    ///
+    /// For now, this is done through a mutable static variable that is set once
+    /// in the builder, and then consumed when starting the engine.
+    ///
+    /// Ideally the builder:
+    ///
+    /// 1. Is engine agnostic and doesn't need any conditional compilation.
+    /// 2. Does not need unsafe code and a global mutable variable to function.
+    ///
+    /// The current path to starting the coffee engine is:
+    ///
+    /// - Use builder and trigger `build`
+    ///   - Store builder in global variable
+    ///   - Return engine with default configuration
+    /// - Use engine's `start` method
+    ///   - Run `coffee::run`
+    ///      - Fetch window config from global builder
+    ///   - Run coffee's `Game::load`
+    ///   - Load global builder
+    ///   - Construct new builder with global config
+    ///   - Call `build_inner` to create engine
+    ///   - Start engine
+    ///
     #[cfg(all(feature = "core-coffee", not(feature = "core-ggez")))]
     pub fn build(self) -> Result<Engine, Error> {
         use crate::core::BUILDER;
 
-        unsafe { BUILDER.set(self).expect("valid builder") };
+        if unsafe { BUILDER.set(self) }.is_err() {
+            todo!("logging")
+        }
+
         Ok(Engine::default())
     }
 
+    /// Actual logic to build the engine.
+    ///
+    /// This is split from the regular `build()` method because that method
+    /// are implemented differently based on the enabled core.
     pub(super) fn build_inner(&mut self) -> Result<Engine, Error> {
         let mut game_state = mem::take(&mut self.game_state);
         let mut plugin_handler = Box::new(wasm::Manager::default());
@@ -175,7 +193,7 @@ fn find_plugins_in_path(path: &PathBuf) -> Result<Vec<PathBuf>, Error> {
     for entry in WalkDir::new(path) {
         let entry = entry?;
 
-        if !entry.file_type().is_file() {
+        if entry.file_type().is_dir() {
             continue;
         }
 
@@ -198,6 +216,7 @@ fn find_plugins_in_path(path: &PathBuf) -> Result<Vec<PathBuf>, Error> {
 }
 
 #[cfg(test)]
+#[allow(clippy::restriction)]
 mod tests {
     use super::*;
 

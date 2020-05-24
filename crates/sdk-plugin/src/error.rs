@@ -1,3 +1,5 @@
+//! A set of errors used by the SDK.
+
 use common::serde_json;
 use thiserror::Error;
 

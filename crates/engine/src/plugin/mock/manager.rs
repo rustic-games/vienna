@@ -1,3 +1,5 @@
+//! Mock handler implementation.
+
 use super::plugin::Plugin;
 use crate::error;
 use crate::plugin::{Handler, Runtime};
@@ -7,6 +9,7 @@ use std::path::Path;
 /// A mock plugin implementation
 #[derive(Debug, Default)]
 pub struct Manager {
+    /// A list of plugins registered to this handler.
     pub(crate) plugins: Vec<Plugin>,
 }
 

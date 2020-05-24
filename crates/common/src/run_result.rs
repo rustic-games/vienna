@@ -1,3 +1,5 @@
+//! The result of the run of a plugin.
+
 use crate::StateTransfer;
 use serde::{Deserialize, Serialize};
 

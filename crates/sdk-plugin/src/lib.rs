@@ -1,8 +1,11 @@
+//! The Vienna SDK used to build Rust-based `WebAssembly` plugins.
+
 #![warn(
     clippy::all,
-    clippy::pedantic,
-    clippy::nursery,
     clippy::cargo,
+    clippy::nursery,
+    clippy::pedantic,
+    clippy::restriction,
     future_incompatible,
     nonstandard_style,
     rust_2018_compatibility,
@@ -10,7 +13,12 @@
     rustdoc,
     unused
 )]
-#![allow(clippy::multiple_crate_versions)]
+#![allow(
+    clippy::float_arithmetic,
+    clippy::multiple_crate_versions,
+    clippy::implicit_return,
+    clippy::shadow_reuse
+)]
 
 mod error;
 mod internal;

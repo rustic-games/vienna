@@ -2,7 +2,7 @@
 //!
 //! Only this module explicitly depends on `coffee` types, in theory.
 
-use crate::{Builder, Engine, Error};
+use crate::{error, Builder, Engine, Error};
 use coffee::{
     graphics::{Frame, Window, WindowSettings},
     input::keyboard::{KeyCode, Keyboard},
@@ -13,20 +13,25 @@ use common::{event, Event, Key};
 use once_cell::sync::OnceCell;
 use std::{collections::HashSet, convert::TryInto};
 
-// A horrible hack to make Coffee work with our current initialization set-up.
+/// A horrible hack to make Coffee work with our current initialization set-up.
 pub static mut BUILDER: OnceCell<Builder> = OnceCell::new();
 
-// Run the engine.
-//
-// The `Engine` attribute does not contain anything useful, as it is constructed
-// using `Engine::default()`. See the `build()` method on `EngineBuilder` to
-// read more about why this is.
+/// Run the engine.
+///
+/// The `Engine` attribute does not contain anything useful, as it is constructed
+/// using `Engine::default()`. See the `build()` method on `EngineBuilder` to
+/// read more about why this is.
 pub fn run(_: Engine) -> Result<(), Error> {
     let config = unsafe { BUILDER.get_unchecked() };
     let (width, height) = config.canvas.dimensions();
 
-    let width = (width * 2).try_into().expect("window width too large");
-    let height = (height * 2).try_into().expect("window height too large");
+    let width = (width.saturating_mul(2))
+        .try_into()
+        .map_err(|_| error::Builder::WindowSize(width))?;
+
+    let height = (height.saturating_mul(2))
+        .try_into()
+        .map_err(|_| error::Builder::WindowSize(height))?;
 
     let window = WindowSettings {
         title: "Vienna: work in progress".to_owned(),
@@ -37,9 +42,7 @@ pub fn run(_: Engine) -> Result<(), Error> {
         vsync: config.vsync_enabled,
     };
 
-    <Engine as Game>::run(window).expect("TODO");
-
-    Ok(())
+    <Engine as Game>::run(window).map_err(Into::into)
 }
 
 impl Game for Engine {
@@ -49,8 +52,16 @@ impl Game for Engine {
     type LoadingScreen = (); // No loading screen
 
     fn load(_window: &Window) -> Task<Self> {
-        let builder = unsafe { BUILDER.get_mut().expect("TODO") };
-        let engine = builder.build_inner().expect("TODO");
+        let builder = match unsafe { BUILDER.get_mut() } {
+            Some(builder) => builder,
+            None => todo!("logging"),
+        };
+
+        #[allow(clippy::match_wild_err_arm)]
+        let engine = match builder.build_inner() {
+            Ok(engine) => engine,
+            Err(_) => todo!("logging"),
+        };
 
         Task::succeed(|| engine)
     }
@@ -105,9 +116,11 @@ impl Game for Engine {
         let canvas = self.config.canvas;
         let handler = self.plugin_handler.as_mut();
 
-        self.updater
-            .run(&mut self.game_state, canvas, handler)
-            .expect("TODO");
+        let result = self.updater.run(&mut self.game_state, canvas, handler);
+
+        if result.is_err() {
+            todo!("logging")
+        }
     }
 
     fn draw(&mut self, frame: &mut Frame<'_>, _timer: &Timer) {

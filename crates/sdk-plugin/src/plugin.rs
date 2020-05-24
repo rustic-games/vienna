@@ -1,3 +1,5 @@
+//! The main macro used to start building a plugin.
+
 #[macro_export]
 macro_rules! plugin {
     () => {

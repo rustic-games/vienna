@@ -1,35 +1,45 @@
+//! The updater implementation for the ggez core.
+
 use crate::{config, error, plugin::Handler, widget};
 use common::{Canvas, Event, GameState};
 use std::time::Instant;
 
+/// Handles updating the game state.
 #[derive(Debug)]
 pub struct Updater {
+    /// The configuration of the updater.
     pub(crate) config: config::Updater,
 
-    // `update_interval` is the minimum amount of time (in nanoseconds) that
-    // needs to pass before we trigger a game state update.
+    /// `update_interval` is the minimum amount of time (in nanoseconds) that
+    /// needs to pass before we trigger a game state update.
     update_interval: u64,
 
-    // `total_time` is the total accumulation of passed time (in nanoseconds).
-    // This is a monotonically increasing value. The value is passed to the
-    // update handler of the game, which can use this when needed.
+    /// `total_time` is the total accumulation of passed time (in nanoseconds).
+    /// This is a monotonically increasing value. The value is passed to the
+    /// update handler of the game, which can use this when needed.
     total_time: u64,
 
-    // `last_step_timestamp` is the timestamp at the end of the last game step.
+    /// `last_step_timestamp` is the timestamp at the end of the last game step.
     last_step_timestamp: Instant,
 
-    // `accumulated_time` is the total time available (in nanoseconds) for the
-    // update handler to run.
+    /// `accumulated_time` is the total time available (in nanoseconds) for the
+    /// update handler to run.
     accumulated_time: u64,
 
-    // The remaining accumulated time is used as a range between 0 and 1 to let
-    // the renderer know how far along the updater is towards providing the next
-    // update.
+    /// The remaining accumulated time is used as a range between 0 and 1 to let
+    /// the renderer know how far along the updater is towards providing the
+    /// next update.
     pub(super) step_progress: f64,
 }
 
 impl Updater {
-    #[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
+    /// Update the game state.
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_precision_loss,
+        clippy::integer_arithmetic,
+        clippy::as_conversions
+    )]
     pub fn run(
         &mut self,
         state: &mut GameState,
@@ -82,6 +92,11 @@ fn update_game_state(
 }
 
 impl From<config::Updater> for Updater {
+    #[allow(
+        clippy::as_conversions,
+        clippy::integer_arithmetic,
+        clippy::integer_division
+    )]
     fn from(config: config::Updater) -> Self {
         let update_interval = 1_000_000_000 / config.updates_per_second;
 
@@ -97,6 +112,7 @@ impl From<config::Updater> for Updater {
 }
 
 #[cfg(test)]
+#[allow(clippy::restriction)]
 mod tests {
     use super::*;
     use std::path::Path;

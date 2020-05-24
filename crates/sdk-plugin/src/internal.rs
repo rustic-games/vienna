@@ -1,3 +1,5 @@
+//! Internal implementation details used to run plugins.
+
 // Since these internal methods are only used in the `load` macro, which is only
 // used once per plugin, it makes sense to always inline them.
 //
@@ -20,15 +22,18 @@ use std::convert::TryInto;
 /// The `registration` attribute contains the details set by the plugin to be
 /// used by the engine to validate the plugin registration.
 #[inline(always)]
+#[allow(clippy::match_wild_err_arm, clippy::as_conversions)]
 pub fn init(registration: &Registration) {
-    // let registration: Vec<u8> = vec![];
-    let data = serde_json::to_vec(registration).expect("unable to serialize registration struct");
+    let data = match serde_json::to_vec(registration) {
+        Ok(data) => data,
+        Err(_) => todo!("logging"),
+    };
 
     let mut slice = data.into_boxed_slice();
-    let len = slice
-        .len()
-        .try_into()
-        .expect("registration struct too large");
+    let len = match slice.len().try_into() {
+        Ok(len) => len,
+        Err(_) => todo!("logging: struct too large"),
+    };
 
     unsafe { ffi::init_callback(slice.as_mut_ptr() as i32, len) };
 }
@@ -62,20 +67,33 @@ pub fn run(mut state: State, result: Result<()>) {
     };
 
     let mut slice = data.into_boxed_slice();
-    let len = slice.len().try_into().expect("result struct too large");
 
-    unsafe { ffi::run_callback(slice.as_mut_ptr() as i32, len) };
+    #[allow(clippy::match_wild_err_arm)]
+    let len = match slice.len().try_into() {
+        Ok(len) => len,
+        Err(_) => todo!("logging: struct too large"),
+    };
+
+    unsafe {
+        #[allow(clippy::as_conversions)]
+        ffi::run_callback(slice.as_mut_ptr() as i32, len)
+    };
 }
 
 /// Allocate memory on the guest.
 #[inline(always)]
 #[must_use]
+#[allow(clippy::match_wild_err_arm, clippy::as_conversions)]
 pub fn malloc(len: i32) -> i32 {
-    let len = len.try_into().expect("unable to allocate memory");
-    let vec = Vec::<u8>::with_capacity(len);
+    let vec = match len.try_into() {
+        Ok(len) => Vec::<u8>::with_capacity(len),
+        Err(_) => todo!("logging"),
+    };
+
     mem::ManuallyDrop::new(vec).as_mut_ptr() as i32
 }
 
+/// Functions exposed by the engine for the plugins to call.
 pub mod ffi {
     #[link(wasm_import_module = "")]
     extern "C" {

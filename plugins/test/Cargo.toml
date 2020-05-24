@@ -1,7 +1,13 @@
 [package]
-name = "test"
+name = "plugin-test"
 version = "0.1.0"
+description = "A test plugin to validate the functionality of the Vienna engine."
+repository = "https://github.com/rustic-games/vienna"
+readme = "README.md"
+keywords = ["game-engine", "visual-novel"]
+categories = ["game-engines"]
 authors = ["Jean Mertz <git@jeanmertz.com>"]
+license = "Proprietary"
 edition = "2018"
 publish = false
 

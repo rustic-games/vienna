@@ -1,3 +1,5 @@
+//! Component related items.
+
 use crate::{Deserialize, Serialize, Shape};
 
 /// A piece of a widget.

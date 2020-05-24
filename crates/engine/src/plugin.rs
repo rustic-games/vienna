@@ -1,3 +1,5 @@
+//! Logic related to the plugin system.
+
 pub(super) mod mock;
 pub(super) mod wasm;
 

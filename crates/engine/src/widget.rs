@@ -1,3 +1,5 @@
+//! Helper methods to handle widgets in the engine.
+
 use common::{
     widget::{ButtonRectangle, MovingCircle, Runtime, Widget},
     Component, Event, WidgetWithPosition,
@@ -16,11 +18,7 @@ pub(super) fn update(
 ) -> Vec<Event> {
     let mut all_widget_events = vec![];
     let widget = widget_with_position.widget().clone().into();
-
-    let mut rt: Box<dyn Runtime> = match &widget {
-        Widget::MovingCircle(state) => Box::new(MovingCircle::try_from(state).expect("TODO")),
-        Widget::ButtonRectangle(state) => Box::new(ButtonRectangle::try_from(state).expect("TODO")),
-    };
+    let mut rt = runtime(&widget);
 
     for event in input_events {
         let mut widget_events = rt
@@ -44,10 +42,20 @@ pub(super) fn update(
 
 /// Return the components for a given widget.
 pub(super) fn components(widget: &Widget) -> Vec<Component> {
-    let rt: Box<dyn Runtime> = match widget {
-        Widget::MovingCircle(state) => Box::new(MovingCircle::try_from(state).expect("TODO")),
-        Widget::ButtonRectangle(state) => Box::new(ButtonRectangle::try_from(state).expect("TODO")),
-    };
+    runtime(widget).render()
+}
 
-    rt.render()
+/// Get the runtime implementation of a widget.
+fn runtime(widget: &Widget) -> Box<dyn Runtime> {
+    #[allow(clippy::match_wild_err_arm)]
+    match &widget {
+        Widget::MovingCircle(state) => match MovingCircle::try_from(state) {
+            Ok(widget) => Box::new(widget),
+            Err(_) => todo!("logging"),
+        },
+        Widget::ButtonRectangle(state) => match ButtonRectangle::try_from(state) {
+            Ok(widget) => Box::new(widget),
+            Err(_) => todo!("logging"),
+        },
+    }
 }

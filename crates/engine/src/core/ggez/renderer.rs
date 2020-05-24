@@ -1,12 +1,24 @@
+//! The renderer implementation for the ggez core.
+
 use crate::{config, widget};
 use common::{Color, Component, GameState, Shape};
 use ggez::{graphics, nalgebra, Context, GameResult};
 use std::time::Instant;
 
+/// Handles rendering frames to the screen.
 #[derive(Debug)]
 pub struct Renderer {
+    /// The configuration of the renderer.
     pub(crate) config: config::Renderer,
+
+    /// A cache of the timestamp the last step finished.
+    ///
+    /// This is used to adhere to any configured FPS limits.
     last_step_timestamp: Instant,
+
+    /// A cache based off the FPS configuration.
+    ///
+    /// This is used to adhere to any configured FPS limits.
     minimum_nanoseconds_between_renders: u64,
 }
 
@@ -38,7 +50,7 @@ impl Renderer {
 
         let last_step_duration = self.last_step_timestamp.elapsed();
 
-        #[allow(clippy::cast_possible_truncation)]
+        #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
         let last_step_nanoseconds = last_step_duration.as_nanos() as u64;
 
         last_step_nanoseconds >= self.minimum_nanoseconds_between_renders
@@ -66,6 +78,7 @@ fn render_game_state(ctx: &mut Context, state: &GameState) -> GameResult<()> {
     graphics::present(ctx)
 }
 
+/// Render a single component to the screen.
 fn render_component(ctx: &mut Context, component: &Component, (mut x, mut y): (f32, f32)) {
     let (x_rel, y_rel) = component.coordinates;
 
@@ -81,18 +94,33 @@ fn render_component(ctx: &mut Context, component: &Component, (mut x, mut y): (f
             2.0,
             into_color(color),
         ),
-        _ => todo!(),
+        Shape::Rectangle {
+            width,
+            height,
+            color,
+        } => graphics::Mesh::new_rectangle(
+            ctx,
+            graphics::DrawMode::fill(),
+            graphics::Rect {
+                x,
+                y,
+                w: width,
+                h: height,
+            },
+            into_color(color),
+        ),
     };
 
-    graphics::draw(
-        ctx,
-        &drawable.expect("TODO"),
-        graphics::DrawParam::default(),
-    )
-    .expect("TODO");
+    let result = drawable
+        .and_then(|drawable| graphics::draw(ctx, &drawable, graphics::DrawParam::default()));
+
+    if result.is_err() {
+        todo!("logging")
+    }
 }
 
-fn into_color(color: Color) -> graphics::Color {
+/// convert our color into a ggez color.
+const fn into_color(color: Color) -> graphics::Color {
     let Color { r, g, b, a } = color;
     graphics::Color { r, g, b, a }
 }
@@ -100,6 +128,7 @@ fn into_color(color: Color) -> graphics::Color {
 impl From<config::Renderer> for Renderer {
     fn from(config: config::Renderer) -> Self {
         let minimum_nanoseconds_between_renders = match config.max_frames_per_second {
+            #[allow(clippy::integer_division, clippy::integer_arithmetic)]
             Some(fps) => 1_000_000_000 / u64::from(fps),
             None => 0,
         };

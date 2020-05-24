@@ -1,3 +1,5 @@
+//! Wasm Manager implementation.
+
 use super::HandlerError;
 use crate::error;
 use crate::plugin::{wasm::Plugin, Handler, Runtime};
@@ -51,6 +53,7 @@ impl Handler for Manager {
             .map_err(|err| (file.to_owned(), err))
             .map_err(HandlerError::from)?;
 
+        #[allow(clippy::print_stdout)] // temporary debuggin
         println!("plugin registered: {}", plugin.name());
         self.plugins.push(plugin);
 
@@ -63,6 +66,7 @@ impl Handler for Manager {
 }
 
 #[cfg(test)]
+#[allow(clippy::restriction)]
 mod tests {
     use super::*;
     use std::path::PathBuf;
