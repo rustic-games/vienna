@@ -17,6 +17,13 @@ pub struct Color {
     pub a: f32,
 }
 
+impl Default for Color {
+    #[inline]
+    fn default() -> Self {
+        (255, 255, 255).into()
+    }
+}
+
 impl From<Color> for Value {
     #[inline]
     fn from(color: Color) -> Self {
