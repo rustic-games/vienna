@@ -41,15 +41,15 @@ pub enum Input {
         keys: HashSet<Key>,
     },
 
-    /// A mouse button event.
-    Mouse(Mouse),
-}
+    /// A click (down and up) of a button.
+    MouseClick { button: MouseButton, x: f32, y: f32 },
 
-/// An event triggered via the mouse.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Mouse {
-    /// TODO
-    button: (),
+    // derivatives (TODO: see RFC006)
+    /// Something has gained focus.
+    Focus,
+
+    /// Something has lost focus.
+    Blur,
 }
 
 /// An event triggered by a widget.
@@ -123,4 +123,14 @@ pub enum Key {
     // modifier keys
     Ctrl,
     Shift,
+}
+
+/// Buttons of a mouse.
+#[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[allow(clippy::missing_docs_in_private_items)]
+pub enum MouseButton {
+    Left,
+    Middle,
+    Right,
+    Other,
 }

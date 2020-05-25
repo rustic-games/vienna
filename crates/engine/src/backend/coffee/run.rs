@@ -5,7 +5,7 @@
 use crate::{error, Builder, Engine, Error};
 use coffee::{
     graphics::{Frame, Window, WindowSettings},
-    input::keyboard::{KeyCode, Keyboard},
+    input::{keyboard::KeyCode, mouse::Button, KeyboardAndMouse},
     load::Task,
     Game, Timer,
 };
@@ -48,7 +48,7 @@ pub fn run(_: Engine) -> Result<(), Error> {
 impl Game for Engine {
     const TICKS_PER_SECOND: u16 = 100;
 
-    type Input = Keyboard;
+    type Input = KeyboardAndMouse;
     type LoadingScreen = (); // No loading screen
 
     fn load(_window: &Window) -> Task<Self> {
@@ -67,48 +67,80 @@ impl Game for Engine {
     }
 
     fn interact(&mut self, input: &mut Self::Input, _: &mut Window) {
-        if input.pressed_keys().is_empty() {
-            return;
-        }
+        let mut events = vec![];
 
-        let mut keys = HashSet::new();
-        for pressed_key in input.pressed_keys() {
-            let key = match pressed_key {
-                // letter keys
-                KeyCode::A => Key::A,
-                KeyCode::B => Key::B,
-                KeyCode::D => Key::D,
-                KeyCode::E => Key::E,
-                KeyCode::G => Key::G,
-                KeyCode::Q => Key::Q,
-                KeyCode::R => Key::R,
-                KeyCode::S => Key::S,
-                KeyCode::W => Key::W,
+        // Handle cursor input if needed.
+        if input.mouse().is_cursor_within_window() {
+            // mouse position
+            let position = input.mouse().cursor_position();
 
-                // other keys
-                KeyCode::Equals if input.is_key_pressed(KeyCode::LShift) => Key::Plus,
-                KeyCode::Minus => Key::Minus,
+            // divided by two, because of Coffee's issue with high-DPI (see
+            // documentation for `render_component()`).
+            let (x, y) = (position.x / 2.0, position.y / 2.0);
 
-                // modifier keys
-                KeyCode::LShift | KeyCode::RShift => Key::Shift,
-                KeyCode::LControl | KeyCode::RControl => Key::Ctrl,
+            let event = Event::Input(event::Input::Pointer(x, y));
+            events.push(event);
 
-                // Quit engine.
-                KeyCode::Escape => {
-                    self.updater.is_finished = true;
-                    return;
+            for button in &[Button::Left, Button::Middle, Button::Right] {
+                for point in input.mouse().button_clicks(*button) {
+                    let button = convert_button(button);
+                    let event = Event::Input(event::Input::MouseClick {
+                        button,
+                        x: point.x / 2.0,
+                        y: point.y / 2.0,
+                    });
+
+                    events.push(event);
                 }
-
-                // All other keys are ignored for now.
-                _ => return,
-            };
-
-            keys.insert(key);
+            }
         }
 
-        let event = Event::Input(event::Input::Keyboard { keys });
-        if !self.updater.active_events.contains(&event) {
-            self.updater.active_events.push(event);
+        if !input.keyboard().pressed_keys().is_empty() {
+            let mut keys = HashSet::new();
+            for pressed_key in input.keyboard().pressed_keys() {
+                let key = match pressed_key {
+                    // letter keys
+                    KeyCode::A => Key::A,
+                    KeyCode::B => Key::B,
+                    KeyCode::D => Key::D,
+                    KeyCode::E => Key::E,
+                    KeyCode::G => Key::G,
+                    KeyCode::Q => Key::Q,
+                    KeyCode::R => Key::R,
+                    KeyCode::S => Key::S,
+                    KeyCode::W => Key::W,
+
+                    // other keys
+                    KeyCode::Equals if input.keyboard().is_key_pressed(KeyCode::LShift) => {
+                        Key::Plus
+                    }
+                    KeyCode::Minus => Key::Minus,
+
+                    // modifier keys
+                    KeyCode::LShift | KeyCode::RShift => Key::Shift,
+                    KeyCode::LControl | KeyCode::RControl => Key::Ctrl,
+
+                    // Quit engine.
+                    KeyCode::Escape => {
+                        self.updater.is_finished = true;
+                        return;
+                    }
+
+                    // All other keys are ignored for now.
+                    _ => break,
+                };
+
+                keys.insert(key);
+            }
+
+            let event = Event::Input(event::Input::Keyboard { keys });
+            events.push(event)
+        }
+
+        for event in events {
+            if !self.updater.active_events.contains(&event) {
+                self.updater.active_events.push(event);
+            }
         }
     }
 
@@ -133,5 +165,14 @@ impl Game for Engine {
 
     fn is_finished(&self) -> bool {
         self.updater.is_finished
+    }
+}
+
+fn convert_button(button: &coffee::input::mouse::Button) -> event::MouseButton {
+    match button {
+        Button::Left => event::MouseButton::Left,
+        Button::Middle => event::MouseButton::Middle,
+        Button::Right => event::MouseButton::Right,
+        _ => event::MouseButton::Other,
     }
 }

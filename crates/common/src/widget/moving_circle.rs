@@ -43,10 +43,15 @@ pub struct MovingCircle {
     // any jarring jumps from high to low at the boundaries.
     /// (r)ed tint up/down
     r_up: bool,
+
     /// (g)reen tint up/down
     g_up: bool,
+
     /// (b)lue tint up/down
     b_up: bool,
+
+    /// Tracking if the circle has focus or not.
+    focus: bool,
 }
 
 /// The direction in which the widget wants to be moved by its owner, based on
@@ -198,6 +203,7 @@ impl widget::Runtime for MovingCircle {
         state.insert("r_up", self.r_up.into());
         state.insert("g_up", self.g_up.into());
         state.insert("b_up", self.b_up.into());
+        state.insert("focus", self.focus.into());
 
         WidgetState::new(widget::Kind::MovingCircle, state)
     }
@@ -206,20 +212,25 @@ impl widget::Runtime for MovingCircle {
     fn interact(&mut self, event: &Event) -> Vec<event::Widget> {
         let mut output = vec![];
 
-        if let Event::Input(event::Input::Keyboard { keys }) = event {
-            for key in keys {
-                let event = match key {
-                    Key::W | Key::A | Key::S | Key::D => move_event(*key, keys),
-                    Key::Q | Key::E => self.resize(1.0, *key),
-                    Key::R | Key::G | Key::B => self.shift_color(0.01, *key),
-                    Key::Plus | Key::Minus => self.shift_alpha(0.01, *key),
-                    _ => None,
-                };
+        match event {
+            Event::Input(event::Input::Keyboard { keys }) => {
+                for key in keys {
+                    let event = match key {
+                        Key::W | Key::A | Key::S | Key::D => move_event(*key, keys),
+                        Key::Q | Key::E => self.resize(1.0, *key),
+                        Key::R | Key::G | Key::B => self.shift_color(0.01, *key),
+                        Key::Plus | Key::Minus => self.shift_alpha(0.01, *key),
+                        _ => None,
+                    };
 
-                if let Some(event) = event {
-                    output.push(event);
+                    if let Some(event) = event {
+                        output.push(event);
+                    }
                 }
             }
+            Event::Input(event::Input::Focus) => self.focus = true,
+            Event::Input(event::Input::Blur) => self.focus = false,
+            _ => {}
         };
 
         output
@@ -227,10 +238,14 @@ impl widget::Runtime for MovingCircle {
 
     #[inline]
     fn render(&self) -> Vec<Component> {
-        let border = Some(Border {
-            color: self.border_color,
-            width: self.border_width,
-        });
+        let border = if self.focus {
+            Some(Border {
+                color: self.border_color,
+                width: self.border_width,
+            })
+        } else {
+            None
+        };
 
         let shape = Shape::Circle {
             radius: self.radius,
@@ -287,6 +302,7 @@ impl TryFrom<&WidgetState> for MovingCircle {
         let r_up = state.get("r_up").and_then(Value::as_bool).unwrap_or(true);
         let g_up = state.get("g_up").and_then(Value::as_bool).unwrap_or(true);
         let b_up = state.get("b_up").and_then(Value::as_bool).unwrap_or(true);
+        let focus = state.get("focus").and_then(Value::as_bool).unwrap_or(false);
 
         #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
         let (radius, border_width) = (radius as f32, border_width as f32);
@@ -299,6 +315,7 @@ impl TryFrom<&WidgetState> for MovingCircle {
             r_up,
             g_up,
             b_up,
+            focus,
         })
     }
 }

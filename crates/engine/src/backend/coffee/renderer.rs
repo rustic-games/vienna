@@ -94,15 +94,35 @@ fn render_component(frame: &mut Frame<'_>, component: &Component, (mut x, mut y)
     x += x_rel;
     y += y_rel;
 
-    let (shape, color) = match component.shape {
-        Shape::Circle { radius, color } => {
+    let mesh = match component.shape {
+        Shape::Circle {
+            radius,
+            fill,
+            border,
+        } => {
             let shape = graphics::Shape::Circle {
-                center: Point::new(x * 2.0, y * 2.0),
+                center: Point::new((x + radius) * 2.0, (y + radius) * 2.0),
                 radius: radius * 2.0,
             };
 
-            (shape, color)
+            let mut mesh = Mesh::new();
+            mesh.fill(shape, into_color(fill));
+
+            if let Some(border) = border {
+                // Make sure the border falls inside the circle's radius.
+                let border_radius = radius - border.width / 4.0;
+
+                let shape = graphics::Shape::Circle {
+                    center: Point::new((x + radius) * 2.0, (y + radius) * 2.0),
+                    radius: border_radius * 2.0,
+                };
+
+                mesh.stroke(shape, into_color(border.color), border.width);
+            }
+
+            mesh
         }
+
         Shape::Rectangle {
             width,
             height,
@@ -117,12 +137,12 @@ fn render_component(frame: &mut Frame<'_>, component: &Component, (mut x, mut y)
 
             let shape = graphics::Shape::Rectangle(rect);
 
-            (shape, color)
+            let mut mesh = Mesh::new();
+            mesh.fill(shape, into_color(color));
+            mesh
         }
     };
 
-    let mut mesh = Mesh::new();
-    mesh.fill(shape, into_color(color));
     mesh.draw(&mut frame.as_target());
 }
 

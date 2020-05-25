@@ -36,7 +36,7 @@ pub use component::Component;
 pub use event::{Event, Key};
 pub use registration::Registration;
 pub use run_result::RunResult;
-pub use shape::Shape;
+pub use shape::{Border, Shape};
 pub use state::{
     Game as GameState, Plugin as PluginState, Transfer as StateTransfer, Widget as WidgetState,
     WidgetWithPosition,

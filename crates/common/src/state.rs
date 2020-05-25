@@ -144,6 +144,12 @@ pub struct WidgetWithPosition {
     #[serde(rename = "c")]
     coordinates: (f32, f32),
 
+    /// Whether or not the widget currently has "focus".
+    ///
+    /// Focus in this case means the mouse pointer is within its bounds.
+    #[serde(rename = "f")]
+    focus: bool,
+
     /// Wether or not the widget should be drawn.
     #[serde(rename = "v")]
     visible: bool,
@@ -160,6 +166,7 @@ impl WidgetWithPosition {
     pub const fn new(coordinates: (f32, f32), visible: bool, state: Widget) -> Self {
         Self {
             coordinates,
+            focus: false,
             visible,
             state,
         }
@@ -183,6 +190,25 @@ impl WidgetWithPosition {
     #[must_use]
     pub const fn is_visible(&self) -> bool {
         self.visible
+    }
+
+    /// Does the widget have focus or not.
+    #[inline]
+    #[must_use]
+    pub const fn focussed(&self) -> bool {
+        self.focus
+    }
+
+    /// Remove focus from widget.
+    #[inline]
+    pub fn blur(&mut self) {
+        self.focus = false;
+    }
+
+    /// Add focus to widget.
+    #[inline]
+    pub fn focus(&mut self) {
+        self.focus = true;
     }
 
     /// Get an immutable reference to the widget state.

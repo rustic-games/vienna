@@ -59,7 +59,8 @@ enum Speed {
 fn init() -> Registration {
     let circle = widget::new("my_circle", widget::MovingCircle)
         .attribute("radius", 100.0)
-        .attribute("color", Color::new(0.0, 0.0, 0.0, 1.0))
+        .attribute("fill_color", Color::new(0.0, 0.0, 0.0, 1.0))
+        .attribute("border_width", 10.0)
         .position(200.0, 200.0);
 
     Registration::new("test").widget(circle)
