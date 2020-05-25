@@ -1,7 +1,8 @@
 //! A moving circle.
 
 use crate::{
-    event, widget, Color, Component, Deserialize, Event, Key, Serialize, Shape, Value, WidgetState,
+    event, widget, Border, Color, Component, Deserialize, Event, Key, Serialize, Shape, Value,
+    WidgetState,
 };
 use std::{
     collections::{HashMap, HashSet},
@@ -28,7 +29,13 @@ pub struct MovingCircle {
     radius: f32,
 
     /// The color of the circle.
-    color: Color,
+    fill_color: Color,
+
+    /// The color of the border.
+    border_color: Color,
+
+    /// The width of the border. If set to `0.0`, no border is drawn.
+    border_width: f32,
 
     // keeps track of whether or not the color shifting is going up or down.
     //
@@ -80,9 +87,9 @@ impl MovingCircle {
     fn shift_color(&mut self, mut step: f32, key: Key) -> Option<event::Widget> {
         #[allow(clippy::wildcard_enum_match_arm)]
         let (up, color) = match key {
-            Key::R => (&mut self.r_up, &mut self.color.r),
-            Key::G => (&mut self.g_up, &mut self.color.g),
-            Key::B => (&mut self.b_up, &mut self.color.b),
+            Key::R => (&mut self.r_up, &mut self.fill_color.r),
+            Key::G => (&mut self.g_up, &mut self.fill_color.g),
+            Key::B => (&mut self.b_up, &mut self.fill_color.b),
             _ => return None,
         };
 
@@ -116,8 +123,8 @@ impl MovingCircle {
     fn shift_alpha(&mut self, step: f32, key: Key) -> Option<event::Widget> {
         #[allow(clippy::wildcard_enum_match_arm)]
         match key {
-            Key::Plus => self.color.a = 1.0_f32.min(self.color.a + step),
-            Key::Minus => self.color.a = 0.0_f32.max(self.color.a - step),
+            Key::Plus => self.fill_color.a = 1.0_f32.min(self.fill_color.a + step),
+            Key::Minus => self.fill_color.a = 0.0_f32.max(self.fill_color.a - step),
             _ => {}
         };
 
@@ -131,7 +138,7 @@ impl widget::Runtime for MovingCircle {
         #[allow(clippy::wildcard_enum_match_arm)]
         match key {
             "radius" => Some(self.radius.into()),
-            "color" => Some(self.color.into()),
+            "fill_color" => Some(self.fill_color.into()),
             _ => None,
         }
     }
@@ -150,14 +157,14 @@ impl widget::Runtime for MovingCircle {
                     None => todo!("logging"),
                 }
             }
-            "color" => {
-                let mut value = serde_json::to_value(self.color).ok();
+            "fill_color" => {
+                let mut value = serde_json::to_value(self.fill_color).ok();
                 cb(value.as_mut());
 
                 #[allow(clippy::match_wild_err_arm)]
                 match value {
                     Some(value) => match serde_json::from_value(value) {
-                        Ok(color) => self.color = color,
+                        Ok(v) => self.fill_color = v,
                         Err(_) => todo!("logging"),
                     },
 
@@ -180,7 +187,9 @@ impl widget::Runtime for MovingCircle {
         let mut state = HashMap::with_capacity(5);
 
         state.insert("radius", self.radius.into());
-        state.insert("color", self.color.into());
+        state.insert("fill_color", self.fill_color.into());
+        state.insert("border_color", self.border_color.into());
+        state.insert("border_width", self.border_width.into());
         state.insert("r_up", self.r_up.into());
         state.insert("g_up", self.g_up.into());
         state.insert("b_up", self.b_up.into());
@@ -213,9 +222,15 @@ impl widget::Runtime for MovingCircle {
 
     #[inline]
     fn render(&self) -> Vec<Component> {
+        let border = Some(Border {
+            color: self.border_color,
+            width: self.border_width,
+        });
+
         let shape = Shape::Circle {
             radius: self.radius,
-            color: self.color,
+            fill: self.fill_color,
+            border,
         };
 
         let component = Component {
@@ -266,12 +281,28 @@ impl TryFrom<&WidgetState> for MovingCircle {
             .as_f64()
             .ok_or("`radius` must be a number")? as f32;
 
-        let color = state
-            .get("color")
-            .ok_or("missing `color` attribute")?
+        let fill_color = state
+            .get("fill_color")
+            .ok_or("missing `fill_color` attribute")?
             .clone();
 
-        let color = serde_json::from_value(color).map_err(|_| "invalid `color` attribute")?;
+        let fill_color =
+            serde_json::from_value(fill_color).map_err(|_| "invalid `fill_color` attribute")?;
+
+        let border_color = state
+            .get("border_color")
+            .ok_or("missing `border_color` attribute")?
+            .clone();
+
+        let border_color =
+            serde_json::from_value(border_color).map_err(|_| "invalid `border_color` attribute")?;
+
+        #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
+        let border_width = state
+            .get("border_width")
+            .ok_or("missing `border_width` attribute")?
+            .as_f64()
+            .ok_or("`border_width` must be a number")? as f32;
 
         let r_up = state.get("r_up").and_then(Value::as_bool).unwrap_or(true);
         let g_up = state.get("g_up").and_then(Value::as_bool).unwrap_or(true);
@@ -279,7 +310,9 @@ impl TryFrom<&WidgetState> for MovingCircle {
 
         Ok(Self {
             radius,
-            color,
+            fill_color,
+            border_color,
+            border_width,
             r_up,
             g_up,
             b_up,
