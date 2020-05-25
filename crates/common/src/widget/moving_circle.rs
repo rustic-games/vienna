@@ -275,38 +275,16 @@ impl TryFrom<&WidgetState> for MovingCircle {
     #[inline]
     fn try_from(state: &WidgetState) -> Result<Self, Self::Error> {
         #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
-        let radius = state
-            .get("radius")
-            .ok_or("missing `radius` attribute")?
-            .as_f64()
-            .ok_or("`radius` must be a number")? as f32;
-
-        let fill_color = state
-            .get("fill_color")
-            .ok_or("missing `fill_color` attribute")?
-            .clone();
-
-        let fill_color =
-            serde_json::from_value(fill_color).map_err(|_| "invalid `fill_color` attribute")?;
-
-        let border_color = state
-            .get("border_color")
-            .ok_or("missing `border_color` attribute")?
-            .clone();
-
-        let border_color =
-            serde_json::from_value(border_color).map_err(|_| "invalid `border_color` attribute")?;
-
-        #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
-        let border_width = state
-            .get("border_width")
-            .ok_or("missing `border_width` attribute")?
-            .as_f64()
-            .ok_or("`border_width` must be a number")? as f32;
-
+        let radius: f64 = state.get_as("radius").ok_or("missing `radius` attribute")?;
+        let fill_color: Color = state.get_as("fill_color").unwrap_or_default();
+        let border_color: Color = state.get_as("border_color").unwrap_or_default();
+        let border_width: f64 = state.get_as("border_width").unwrap_or(0.0);
         let r_up = state.get("r_up").and_then(Value::as_bool).unwrap_or(true);
         let g_up = state.get("g_up").and_then(Value::as_bool).unwrap_or(true);
         let b_up = state.get("b_up").and_then(Value::as_bool).unwrap_or(true);
+
+        #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
+        let (radius, border_width) = (radius as f32, border_width as f32);
 
         Ok(Self {
             radius,

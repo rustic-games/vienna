@@ -1,6 +1,9 @@
 //! Types used to convert and expose SDK functionality.
 
-use common::{Canvas, Event, PluginState, StateTransfer, Value, WidgetWithPosition};
+use common::{
+    serde_json, Canvas, DeserializeOwned, Event, PluginState, StateTransfer, Value,
+    WidgetWithPosition,
+};
 use std::collections::HashMap;
 
 /// A data container used to unwrap data transfered from the engine to the
@@ -69,6 +72,14 @@ impl State {
         self.updated = true;
 
         self.owned.get_mut(&key.into())
+    }
+
+    /// Get an owned state value of a specific type.
+    #[inline]
+    pub fn get_as<T: DeserializeOwned>(&self, key: impl Into<String>) -> Option<T> {
+        self.get(key)
+            .cloned()
+            .and_then(|v| serde_json::from_value(v).ok())
     }
 
     /// Get a mutable reference to a widget owned by this plugin.

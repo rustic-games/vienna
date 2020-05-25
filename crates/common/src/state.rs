@@ -1,6 +1,6 @@
 //! All state tracked by the engine.
 
-use crate::{widget, Canvas, Deserialize, Event, Serialize, Value};
+use crate::{widget, Canvas, Deserialize, DeserializeOwned, Event, Serialize, Value};
 use std::collections::HashMap;
 
 /// The state of the game.
@@ -113,6 +113,14 @@ impl Plugin {
     #[inline]
     pub fn get_mut(&mut self, key: impl Into<String>) -> Option<&mut Value> {
         self.state.get_mut(&key.into())
+    }
+
+    /// Get an owned state value of a specific type.
+    #[inline]
+    pub fn get_as<T: DeserializeOwned>(&self, key: impl Into<String>) -> Option<T> {
+        self.get(key)
+            .cloned()
+            .and_then(|v| serde_json::from_value(v).ok())
     }
 
     /// Get a mutable reference to a widget (and its position) owned by the
@@ -237,6 +245,14 @@ impl Widget {
     #[inline]
     pub fn get(&self, key: impl Into<String>) -> Option<&Value> {
         self.state.get(&key.into())
+    }
+
+    /// Get an owned state value of a specific type.
+    #[inline]
+    pub fn get_as<T: DeserializeOwned>(&self, key: impl Into<String>) -> Option<T> {
+        self.get(key)
+            .cloned()
+            .and_then(|v| serde_json::from_value(v).ok())
     }
 
     /// Get a mutable reference to a state value.
