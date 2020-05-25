@@ -140,20 +140,20 @@ pub struct WidgetWithPosition {
     #[serde(rename = "v")]
     visible: bool,
 
-    /// The widget which exists at the given position.
+    /// The state of the widget which exists at the given position.
     #[serde(rename = "w")]
-    widget: Widget,
+    state: Widget,
 }
 
 impl WidgetWithPosition {
     /// Create a new widget at the given position.
     #[inline]
     #[must_use]
-    pub const fn new(coordinates: (f32, f32), visible: bool, widget: Widget) -> Self {
+    pub const fn new(coordinates: (f32, f32), visible: bool, state: Widget) -> Self {
         Self {
             coordinates,
             visible,
-            widget,
+            state,
         }
     }
 
@@ -177,17 +177,17 @@ impl WidgetWithPosition {
         self.visible
     }
 
-    /// Get an immutable reference to the widget.
+    /// Get an immutable reference to the widget state.
     #[inline]
     #[must_use]
-    pub const fn widget(&self) -> &Widget {
-        &self.widget
+    pub const fn state(&self) -> &Widget {
+        &self.state
     }
 
-    /// Get a mutable reference to the widget.
+    /// Get a mutable reference to the widget state.
     #[inline]
-    pub fn widget_mut(&mut self) -> &mut Widget {
-        &mut self.widget
+    pub fn state_mut(&mut self) -> &mut Widget {
+        &mut self.state
     }
 }
 

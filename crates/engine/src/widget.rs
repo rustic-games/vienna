@@ -17,8 +17,8 @@ pub(super) fn update(
     input_events: &[Event],
 ) -> Vec<Event> {
     let mut all_widget_events = vec![];
-    let widget = widget_with_position.widget().clone().into();
-    let mut rt = runtime(&widget);
+    let state = widget_with_position.state().clone().into();
+    let mut rt = runtime(&state);
 
     for event in input_events {
         let mut widget_events = rt
@@ -35,7 +35,7 @@ pub(super) fn update(
 
     // Store the updated widget state, since the `interact` action
     // might have modified it.
-    *widget_with_position.widget_mut() = rt.state();
+    *widget_with_position.state_mut() = rt.state();
 
     all_widget_events
 }

@@ -62,10 +62,10 @@ fn render_game_state(frame: &mut Frame<'_>, state: &GameState) {
         }
 
         // TODO: remove clone
-        let widget = widget_with_position.widget().clone().into();
+        let state = widget_with_position.state().clone().into();
         let coordinates = widget_with_position.coordinates();
 
-        for component in widget::components(&widget) {
+        for component in widget::components(&state) {
             render_component(frame, &component, coordinates);
         }
     }

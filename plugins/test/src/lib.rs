@@ -94,7 +94,7 @@ fn transform_widget(
     (x_max, y_max): (u16, u16),
 ) {
     let (x, y) = widget.coordinates();
-    let state = widget.widget_mut();
+    let state = widget.state_mut();
 
     if let widget::Kind::MovingCircle = state.kind() {
         let radius = match state.get("radius").and_then(Value::as_f64) {
