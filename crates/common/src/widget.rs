@@ -164,4 +164,21 @@ pub trait Runtime {
     fn interact(&mut self, event: &Event) -> Vec<event::Widget> {
         vec![]
     }
+
+    /// Check if the given (relative) coordinates fall within the bounds of the
+    /// widget. (0, 0) is the top-left of the widget.
+    ///
+    /// The passed in coordinates are never negative, and are never greater than
+    /// the dimensions of the boxed widget (e.g. the values returned by
+    /// `dimensions()`).
+    ///
+    /// By default this method always returns `true`.
+    #[inline]
+    #[allow(unused)]
+    fn is_within_bounds(&self, x: f32, y: f32) -> bool {
+        debug_assert!(x >= 0.0 && x <= self.dimensions().0);
+        debug_assert!(y >= 0.0 && y <= self.dimensions().1);
+
+        true
+    }
 }

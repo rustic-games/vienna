@@ -183,6 +183,11 @@ impl widget::Runtime for MovingCircle {
     }
 
     #[inline]
+    fn is_within_bounds(&self, x: f32, y: f32) -> bool {
+        (self.radius - x).hypot(self.radius - y) <= self.radius
+    }
+
+    #[inline]
     fn state(&self) -> WidgetState {
         let mut state = HashMap::with_capacity(5);
 
