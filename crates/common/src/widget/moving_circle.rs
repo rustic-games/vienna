@@ -37,21 +37,35 @@ pub struct MovingCircle {
     /// The width of the border. If set to `0.0`, no border is drawn.
     border_width: f32,
 
-    // keeps track of whether or not the color shifting is going up or down.
-    //
-    // This allows a single key to continuously shift the color space without
-    // any jarring jumps from high to low at the boundaries.
-    /// (r)ed tint up/down
-    r_up: bool,
-
-    /// (g)reen tint up/down
-    g_up: bool,
-
-    /// (b)lue tint up/down
-    b_up: bool,
+    /// Color shifting configuration, to smoothly go up and down the color
+    /// spectrum once the beginning/end of the spectrum is reached.
+    color_shift: ColorShift,
 
     /// Tracking if the circle has focus or not.
     focus: bool,
+}
+
+/// Direction of color shifting for each color.
+#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[allow(clippy::missing_docs_in_private_items)]
+struct ColorShift {
+    r: ShiftMode,
+    g: ShiftMode,
+    b: ShiftMode,
+}
+
+/// Color shift mode.
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[allow(clippy::missing_docs_in_private_items)]
+enum ShiftMode {
+    Up,
+    Down,
+}
+
+impl Default for ShiftMode {
+    fn default() -> Self {
+        Self::Up
+    }
 }
 
 /// The direction in which the widget wants to be moved by its owner, based on
@@ -102,15 +116,15 @@ impl MovingCircle {
     /// Shift the circle color based on the provided key.
     fn shift_color(&mut self, mut step: f32, key: Key) -> Option<event::Widget> {
         #[allow(clippy::wildcard_enum_match_arm)]
-        let (up, color) = match key {
-            Key::R => (&mut self.r_up, &mut self.fill_color.r),
-            Key::G => (&mut self.g_up, &mut self.fill_color.g),
-            Key::B => (&mut self.b_up, &mut self.fill_color.b),
+        let (shift_mode, color) = match key {
+            Key::R => (&mut self.color_shift.r, &mut self.fill_color.r),
+            Key::G => (&mut self.color_shift.g, &mut self.fill_color.g),
+            Key::B => (&mut self.color_shift.b, &mut self.fill_color.b),
             _ => return None,
         };
 
         // Depending on the "up" toggle, we move up or down the color spectrum.
-        if !*up {
+        if *shift_mode == ShiftMode::Down {
             step *= -1.0;
         }
 
@@ -119,14 +133,14 @@ impl MovingCircle {
         // If we've reach the end of the color spectrum, we switch the key to
         // move the spectrum down again.
         if new_color > 1.0 {
-            *up = false;
+            *shift_mode = ShiftMode::Down;
             new_color = 1.0;
         }
 
         // Similar to above, but this time for the lowest end of the color
         // spectrum, switching the key to move up again.
         if new_color < 0.0 {
-            *up = true;
+            *shift_mode = ShiftMode::Up;
             new_color = 0.0;
         }
 
@@ -211,9 +225,7 @@ impl widget::Runtime for MovingCircle {
         state.insert("fill_color", self.fill_color.into());
         state.insert("border_color", self.border_color.into());
         state.insert("border_width", self.border_width.into());
-        state.insert("r_up", self.r_up.into());
-        state.insert("g_up", self.g_up.into());
-        state.insert("b_up", self.b_up.into());
+        state.insert("color_shift", self.color_shift.into());
         state.insert("focus", self.focus.into());
 
         WidgetState::new(widget::Kind::MovingCircle, state)
@@ -325,9 +337,7 @@ impl TryFrom<&WidgetState> for MovingCircle {
         let fill_color: Color = state.get_as("fill_color").unwrap_or_default();
         let border_color: Color = state.get_as("border_color").unwrap_or_default();
         let border_width: f64 = state.get_as("border_width").unwrap_or(0.0);
-        let r_up = state.get("r_up").and_then(Value::as_bool).unwrap_or(true);
-        let g_up = state.get("g_up").and_then(Value::as_bool).unwrap_or(true);
-        let b_up = state.get("b_up").and_then(Value::as_bool).unwrap_or(true);
+        let color_shift: ColorShift = state.get_as("color_shift").unwrap_or_default();
         let focus = state.get("focus").and_then(Value::as_bool).unwrap_or(false);
 
         #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
@@ -338,10 +348,16 @@ impl TryFrom<&WidgetState> for MovingCircle {
             fill_color,
             border_color,
             border_width,
-            r_up,
-            g_up,
-            b_up,
+            color_shift,
             focus,
         })
+    }
+}
+
+impl From<ColorShift> for Value {
+    #[inline]
+    fn from(color_shift: ColorShift) -> Self {
+        #[allow(clippy::result_expect_used)] // known to be valid
+        serde_json::to_value(color_shift).expect("valid")
     }
 }

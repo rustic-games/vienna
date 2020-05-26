@@ -174,7 +174,7 @@ pub trait Runtime {
     ///
     /// By default this method always returns `true`.
     #[inline]
-    #[allow(unused)]
+    #[allow(unused, clippy::panic)]
     fn is_within_bounds(&self, x: f32, y: f32) -> bool {
         debug_assert!(x >= 0.0 && x <= self.dimensions().0);
         debug_assert!(y >= 0.0 && y <= self.dimensions().1);
