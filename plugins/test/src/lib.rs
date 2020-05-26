@@ -28,6 +28,7 @@ vienna::plugin!();
 #[derive(Debug, Copy, Clone)]
 #[allow(clippy::missing_docs_in_private_items)]
 struct Movement {
+    position: Option<(f32, f32)>,
     direction: Option<Direction>,
     speed: Speed,
 }
@@ -103,6 +104,8 @@ fn transform_widget(
             None => todo!("logging"),
         };
 
+        let diameter = radius * 2.0;
+
         let (x_max, y_max) = (x_max as f32, y_max as f32);
 
         let dv = match movement.speed {
@@ -111,17 +114,19 @@ fn transform_widget(
             Speed::Turbo => 5.0,
         };
 
-        let (dv_x, dv_y) = match movement.direction {
-            Some(Direction::Up) => (0.0, -dv),
-            Some(Direction::Left) => (-dv, 0.0),
-            Some(Direction::Down) => (0.0, dv),
-            Some(Direction::Right) => (dv, 0.0),
-            None => (0.0, 0.0),
-        };
+        let (dv_x, dv_y) = movement
+            .position
+            .unwrap_or_else(|| match movement.direction {
+                Some(Direction::Up) => (0.0, -dv),
+                Some(Direction::Left) => (-dv, 0.0),
+                Some(Direction::Down) => (0.0, dv),
+                Some(Direction::Right) => (dv, 0.0),
+                None => (0.0, 0.0),
+            });
 
         // min/max so that the circle cannot move off the canvas.
-        let x = (x + dv_x).min(x_max - radius).max(radius);
-        let y = (y + dv_y).min(y_max - radius).max(radius);
+        let x = (x + dv_x).min(x_max - diameter).max(0.0);
+        let y = (y + dv_y).min(y_max - diameter).max(0.0);
         widget.set_coordinates(x, y);
     }
 }
@@ -146,15 +151,27 @@ fn event_to_movement(widget_name: &str, event: &Event) -> Option<Movement> {
                 .map(serde_json::from_value)?
                 .ok()?;
 
-            Some(Movement { direction, speed })
+            Some(Movement {
+                position: None,
+                direction,
+                speed,
+            })
         }
 
         // After a resize we need to make sure the circle still fits within the
         // canvas boundaries.
-        Event::Widget { event, .. } if event.name() == "resized" => Some(Movement {
-            direction: None,
-            speed: Speed::Normal,
-        }),
+        Event::Widget { event, .. } if event.name() == "resized" => {
+            let position = event
+                .attribute("delta")
+                .and_then(Value::as_f64)
+                .map(|v| (-v as f32, -v as f32));
+
+            Some(Movement {
+                position,
+                direction: None,
+                speed: Speed::Normal,
+            })
+        }
         _ => None,
     }
 }

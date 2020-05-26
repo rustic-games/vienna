@@ -79,13 +79,24 @@ impl MovingCircle {
     /// Resize the circle based on the provided key.
     fn resize(&mut self, step: f32, key: Key) -> Option<event::Widget> {
         #[allow(clippy::wildcard_enum_match_arm)]
-        match key {
-            Key::Q => self.radius = 0.0_f32.max(self.radius - step),
-            Key::E => self.radius = std::f32::MAX.min(self.radius + step),
+        let radius = match key {
+            Key::Q => 0.0_f32.max(self.radius - step),
+            Key::E => std::f32::MAX.min(self.radius + step),
             _ => return None,
         };
 
-        Some(event::Widget::new("resized"))
+        // Because the dimension of the circle is calculated from the top-left,
+        // a resizing circle expands to the bottom-right. The delta added to the
+        // "resized" event can be used by the widget owner to offset the
+        // position of the circle to have it expand evenly in all four
+        // directions.
+        let delta = radius - self.radius;
+        self.radius = radius;
+
+        let mut event = event::Widget::new("resized");
+        event.add_attribute("delta", delta);
+
+        Some(event)
     }
 
     /// Shift the circle color based on the provided key.
@@ -158,7 +169,7 @@ impl widget::Runtime for MovingCircle {
                 cb(Some(&mut value));
 
                 match value.as_f64() {
-                    Some(radius) => self.radius = radius as f32,
+                    Some(v) => self.radius = v as f32,
                     None => todo!("logging"),
                 }
             }
