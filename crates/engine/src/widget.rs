@@ -70,6 +70,7 @@ fn widget_events(
             let input = match () {
                 _ if kind == 0 => event::Input::Pointer(x, y),
                 _ if kind == 1 => event::Input::MouseClick { button, x, y },
+                _ if kind == 2 => event::Input::MousePress { button, x, y },
                 _ => return None,
             };
 
@@ -81,14 +82,45 @@ fn widget_events(
 
     match event {
         Event::Input(event::Input::Pointer(x, y)) => {
-            if let Some(event) = handle_event(0, event::MouseButton::Left /* dummy */, (x, y)) {
-                events.push(event);
+            match handle_event(0, event::MouseButton::Left /* dummy */, (x, y)) {
+                Some(event) => events.push(event),
+
+                // If `None` is returned, it means the cursor is no longer over
+                // the widget, so we stop tracking a long-press.
+                //
+                // FIXME: this makes it so that dragging too fast moves the
+                // cursor out of the widget and stop the drag.
+                // None => widget.press_counter = 0,
+                //
+                // Actually no, even with this `None` below, it still stops
+                // tracking the drag. Probably need to have to separate events
+                // fire: "press" and "release", which differ from "click" in
+                // that click is a quick press/release.
+                None => {}
             }
         }
 
         Event::Input(event::Input::MouseClick { button, x, y }) => {
             if let Some(event) = handle_event(1, button, (x, y)) {
                 events.push(event);
+
+                // reset the press counter, as the mouse is no longer held down.
+                widget.press_counter = 0;
+            }
+        }
+
+        Event::Input(event::Input::MousePress { button, x, y }) => {
+            // TODO: track how many "press" events were seen, if above a
+            // certain threshold, we consider it to be a "long press" instead of
+            // a "click in progress".
+            if let Some(event) = handle_event(2, button, (x, y)) {
+                // Only once the mouse button is held down long enough, does it
+                // count as an actual "press".
+                if widget.press_counter > 10 {
+                    events.push(event)
+                }
+
+                widget.press_counter += 1;
             }
         }
 

@@ -44,6 +44,9 @@ pub enum Input {
     /// A click (down and up) of a button.
     MouseClick { button: MouseButton, x: f32, y: f32 },
 
+    /// A pressed (down) button.
+    MousePress { button: MouseButton, x: f32, y: f32 },
+
     // derivatives (TODO: see RFC006)
     /// Something has gained focus.
     Focus,

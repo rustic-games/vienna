@@ -92,6 +92,13 @@ impl Game for Engine {
 
                     events.push(event);
                 }
+
+                if input.mouse().is_button_pressed(*button) {
+                    let button = convert_button(button);
+                    let event = Event::Input(event::Input::MousePress { button, x, y });
+
+                    events.push(event);
+                }
             }
         }
 

@@ -241,6 +241,11 @@ impl widget::Runtime for MovingCircle {
             }
             Event::Input(event::Input::Focus) => self.focus = true,
             Event::Input(event::Input::Blur) => self.focus = false,
+            Event::Input(event::Input::MousePress { button, x, y })
+                if button == &event::MouseButton::Left =>
+            {
+                output.push(drag_event(*x - self.radius, *y - self.radius))
+            }
             _ => {}
         };
 
@@ -298,6 +303,16 @@ fn move_event(key: Key, modifiers: &HashSet<Key>) -> Option<event::Widget> {
     event.add_attribute("speed", speed);
 
     Some(event)
+}
+
+/// Generate the "drag" event to ask the plugin to move it to a specific
+/// location.
+fn drag_event(x: f32, y: f32) -> event::Widget {
+    let mut event = event::Widget::new("drag");
+    event.add_attribute("x", x);
+    event.add_attribute("y", y);
+
+    event
 }
 
 impl TryFrom<&WidgetState> for MovingCircle {

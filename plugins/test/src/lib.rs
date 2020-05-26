@@ -158,6 +158,26 @@ fn event_to_movement(widget_name: &str, event: &Event) -> Option<Movement> {
             })
         }
 
+        Event::Widget { event, .. } if event.name() == "drag" => {
+            let x: f64 = event
+                .attribute("x")
+                .cloned()
+                .map(serde_json::from_value)?
+                .ok()?;
+
+            let y: f64 = event
+                .attribute("y")
+                .cloned()
+                .map(serde_json::from_value)?
+                .ok()?;
+
+            Some(Movement {
+                position: Some((x as f32, y as f32)),
+                direction: None,
+                speed: Speed::Normal,
+            })
+        }
+
         // After a resize we need to make sure the circle still fits within the
         // canvas boundaries.
         Event::Widget { event, .. } if event.name() == "resized" => {

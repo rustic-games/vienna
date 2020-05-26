@@ -157,6 +157,17 @@ pub struct WidgetWithPosition {
     /// The state of the widget which exists at the given position.
     #[serde(rename = "w")]
     state: Widget,
+
+    /// Track how many subsequent "button presses" this widget has received.
+    ///
+    /// This is used to distinguish short presses (which turn into clicks) from
+    /// a long press while holding down the mouse button.
+    ///
+    /// TODO: Does this counter belong on a widget, or should there be a global
+    /// "drag" property? I think this should become a `dragging` boolean or
+    /// something, and have the "press" event be different from "drag".
+    #[serde(rename = "p")]
+    pub press_counter: usize,
 }
 
 impl WidgetWithPosition {
@@ -169,6 +180,7 @@ impl WidgetWithPosition {
             focus: false,
             visible,
             state,
+            press_counter: 0,
         }
     }
 
