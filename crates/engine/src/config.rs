@@ -46,12 +46,18 @@ impl Default for Updater {
 pub(super) struct Renderer {
     /// The amount of frames per second the renderer will run.
     pub max_frames_per_second: Option<u16>,
+
+    /// Whether or not the game should run in "high DPI" mode.
+    ///
+    /// Used for (amongst others) Retina Macs.
+    pub hidpi_mode: bool,
 }
 
 impl Default for Renderer {
     fn default() -> Self {
         Self {
             max_frames_per_second: Some(90),
+            hidpi_mode: false,
         }
     }
 }

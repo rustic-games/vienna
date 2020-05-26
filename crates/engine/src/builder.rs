@@ -40,6 +40,9 @@ pub struct Builder {
 
     /// Whether or not to enable vsync.
     pub(crate) vsync_enabled: bool,
+
+    /// Whether or not "high DPI" mode is enabled.
+    pub(crate) hidpi_mode: bool,
 }
 
 impl Builder {
@@ -96,6 +99,15 @@ impl Builder {
             fps => Some(fps),
         };
 
+        self
+    }
+
+    /// Enable "high DPI" mode, which means every four pixels are counted as
+    /// one.
+    ///
+    /// This allows running the game (for example) on Macs with retina support.
+    pub const fn with_hidpi_mode(mut self) -> Self {
+        self.hidpi_mode = true;
         self
     }
 
@@ -165,6 +177,7 @@ impl Builder {
 
         let renderer = From::from(config::Renderer {
             max_frames_per_second: self.maximum_fps,
+            hidpi_mode: self.hidpi_mode,
         });
 
         Ok(Engine {

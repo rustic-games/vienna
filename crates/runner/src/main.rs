@@ -32,6 +32,7 @@ fn main() -> anyhow::Result<()> {
         //
         // .with_maximum_fps(90)
         .with_vsync()
+        .with_hidpi_mode()
         .build()?
         .run()
         .map_err(Into::into)

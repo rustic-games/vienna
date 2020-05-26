@@ -29,7 +29,7 @@ impl Renderer {
         // decisions.
         self.last_step_timestamp = Instant::now();
 
-        render_game_state(frame, state)
+        self.render_game_state(frame, state)
     }
 
     /// Should the renderer render to the screen, based on the max FPS settings?
@@ -45,117 +45,99 @@ impl Renderer {
 
         last_step_nanoseconds >= self.minimum_nanoseconds_between_renders
     }
-}
 
-/// Render the state of the game to the screen.
-fn render_game_state(frame: &mut Frame<'_>, state: &GameState) {
-    frame.clear(graphics::Color {
-        r: 0.1,
-        g: 0.2,
-        b: 0.3,
-        a: 1.0,
-    });
+    /// Render the state of the game to the screen.
+    fn render_game_state(&self, frame: &mut Frame<'_>, state: &GameState) {
+        frame.clear(graphics::Color {
+            r: 0.1,
+            g: 0.2,
+            b: 0.3,
+            a: 1.0,
+        });
 
-    for widget_with_position in state.widgets() {
-        if !widget_with_position.is_visible() {
-            continue;
-        }
+        for widget_with_position in state.widgets() {
+            if !widget_with_position.is_visible() {
+                continue;
+            }
 
-        // TODO: remove clone
-        let state = widget_with_position.state().clone().into();
-        let coordinates = widget_with_position.coordinates();
+            // TODO: remove clone
+            let state = widget_with_position.state().clone().into();
+            let coordinates = widget_with_position.coordinates();
 
-        for component in widget::components(&state) {
-            render_component(frame, &component, coordinates);
+            for component in widget::components(&state) {
+                self.render_component(frame, &component, coordinates);
+            }
         }
     }
-}
 
-/// The Coffee backend does not support high-DPI mode yet (retina screens).
-///
-/// See: <https://github.com/hecrj/coffee/issues/6>
-///
-/// The current way to deal with this works as follows:
-///
-/// When building the engine, the width and height of the window are defined by
-/// the `game_state`.
-///
-/// When the `coffee` backend is used, these values will be doubled so that the
-/// window is the correct size on retina screens.
-///
-/// The actual size of the "canvas" is left unchanged. This allows the plugins
-/// to use "points" as if they are pixels.
-///
-/// Then, in this function when we convert a widget to an actual graphic, we
-/// double all pixel values.
-fn render_component(frame: &mut Frame<'_>, component: &Component, (x, y): (f32, f32)) {
-    // hack in high-DPI mode for testing purposes
-    let dpi = 2.0;
+    /// Render a single component to the screen.
+    fn render_component(&self, frame: &mut Frame<'_>, component: &Component, (x, y): (f32, f32)) {
+        let dpi = if self.config.hidpi_mode { 2.0 } else { 1.0 };
 
-    let (x_rel, y_rel) = component.coordinates;
+        let (x_rel, y_rel) = component.coordinates;
 
-    // account for
-    let mut x = x * dpi;
-    let mut y = y * dpi;
+        let mut x = x * dpi;
+        let mut y = y * dpi;
 
-    x += x_rel * dpi;
-    y += y_rel * dpi;
+        x += x_rel * dpi;
+        y += y_rel * dpi;
 
-    let mesh = match component.shape {
-        Shape::Circle {
-            radius,
-            fill,
-            border,
-        } => {
-            let radius = radius * dpi;
-
-            let shape = graphics::Shape::Circle {
-                center: Point::new(x + radius, y + radius),
+        let mesh = match component.shape {
+            Shape::Circle {
                 radius,
-            };
-
-            let mut mesh = Mesh::new();
-            mesh.fill(shape, into_color(fill));
-
-            if let Some(border) = border {
-                // Make sure the border falls inside the circle's radius.
-                let border_radius = radius - border.width / dpi;
+                fill,
+                border,
+            } => {
+                let radius = radius * dpi;
 
                 let shape = graphics::Shape::Circle {
                     center: Point::new(x + radius, y + radius),
-                    radius: border_radius,
+                    radius,
                 };
 
-                mesh.stroke(shape, into_color(border.color), border.width);
+                let mut mesh = Mesh::new();
+                mesh.fill(shape, into_color(fill));
+
+                if let Some(border) = border {
+                    // Make sure the border falls inside the circle's radius.
+                    let border_radius = radius - border.width / dpi;
+
+                    let shape = graphics::Shape::Circle {
+                        center: Point::new(x + radius, y + radius),
+                        radius: border_radius,
+                    };
+
+                    mesh.stroke(shape, into_color(border.color), border.width);
+                }
+
+                mesh
             }
 
-            mesh
-        }
-
-        Shape::Rectangle {
-            width,
-            height,
-            color,
-        } => {
-            let width = width * dpi;
-            let height = height * dpi;
-
-            let rect = graphics::Rectangle {
-                x,
-                y,
+            Shape::Rectangle {
                 width,
                 height,
-            };
+                color,
+            } => {
+                let width = width * dpi;
+                let height = height * dpi;
 
-            let shape = graphics::Shape::Rectangle(rect);
+                let rect = graphics::Rectangle {
+                    x,
+                    y,
+                    width,
+                    height,
+                };
 
-            let mut mesh = Mesh::new();
-            mesh.fill(shape, into_color(color));
-            mesh
-        }
-    };
+                let shape = graphics::Shape::Rectangle(rect);
 
-    mesh.draw(&mut frame.as_target());
+                let mut mesh = Mesh::new();
+                mesh.fill(shape, into_color(color));
+                mesh
+            }
+        };
+
+        mesh.draw(&mut frame.as_target());
+    }
 }
 
 /// Convert our color struct to Coffee's one.
