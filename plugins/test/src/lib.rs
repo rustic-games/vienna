@@ -58,13 +58,21 @@ enum Speed {
 
 /// Runs once when the plugin is registered with the engine.
 fn init() -> Registration {
+    let button = widget::new("red", widget::ButtonRectangle)
+        .attribute("width", 160.0)
+        .attribute("height", 40.0)
+        .attribute("idle_color", Color::new(0.5, 0.2, 0.9, 1.0))
+        .attribute("focus_color", Color::new(0.1, 1.0, 0.8, 1.0))
+        .attribute("active_color", Color::new(0.3, 0.5, 0.6, 1.0))
+        .position(250.0, 50.0);
+
     let circle = widget::new("my_circle", widget::MovingCircle)
         .attribute("radius", 100.0)
         .attribute("fill_color", Color::new(0.0, 0.0, 0.0, 1.0))
         .attribute("border_width", 10.0)
         .position(200.0, 200.0);
 
-    Registration::new("test").widget(circle)
+    Registration::new("test").widget(circle).widget(button)
 }
 
 /// Runs on every game tick.

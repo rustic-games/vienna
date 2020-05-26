@@ -88,11 +88,18 @@ fn render_game_state(frame: &mut Frame<'_>, state: &GameState) {
 ///
 /// Then, in this function when we convert a widget to an actual graphic, we
 /// double all pixel values.
-fn render_component(frame: &mut Frame<'_>, component: &Component, (mut x, mut y): (f32, f32)) {
+fn render_component(frame: &mut Frame<'_>, component: &Component, (x, y): (f32, f32)) {
+    // hack in high-DPI mode for testing purposes
+    let dpi = 2.0;
+
     let (x_rel, y_rel) = component.coordinates;
 
-    x += x_rel;
-    y += y_rel;
+    // account for
+    let mut x = x * dpi;
+    let mut y = y * dpi;
+
+    x += x_rel * dpi;
+    y += y_rel * dpi;
 
     let mesh = match component.shape {
         Shape::Circle {
@@ -100,9 +107,11 @@ fn render_component(frame: &mut Frame<'_>, component: &Component, (mut x, mut y)
             fill,
             border,
         } => {
+            let radius = radius * dpi;
+
             let shape = graphics::Shape::Circle {
-                center: Point::new((x + radius) * 2.0, (y + radius) * 2.0),
-                radius: radius * 2.0,
+                center: Point::new(x + radius, y + radius),
+                radius,
             };
 
             let mut mesh = Mesh::new();
@@ -110,11 +119,11 @@ fn render_component(frame: &mut Frame<'_>, component: &Component, (mut x, mut y)
 
             if let Some(border) = border {
                 // Make sure the border falls inside the circle's radius.
-                let border_radius = radius - border.width / 4.0;
+                let border_radius = radius - border.width / dpi;
 
                 let shape = graphics::Shape::Circle {
-                    center: Point::new((x + radius) * 2.0, (y + radius) * 2.0),
-                    radius: border_radius * 2.0,
+                    center: Point::new(x + radius, y + radius),
+                    radius: border_radius,
                 };
 
                 mesh.stroke(shape, into_color(border.color), border.width);
@@ -128,6 +137,9 @@ fn render_component(frame: &mut Frame<'_>, component: &Component, (mut x, mut y)
             height,
             color,
         } => {
+            let width = width * dpi;
+            let height = height * dpi;
+
             let rect = graphics::Rectangle {
                 x,
                 y,
